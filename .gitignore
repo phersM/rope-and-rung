@@ -1,0 +1,12 @@
+# local dev & design assets — deliberately not published
+config.js
+tests/
+package.json
+package-lock.json
+council/
+design/
+supabase/
+DESIGN.md
+CLAUDE.md
+.DS_Store
+.gstack/

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Push Pact</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Push Pact">
+<meta name="theme-color" content="#FAF3E8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Caveat:wght@600;700&family=Archivo:ital,wght@0,500;0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="onboarding" class="overlay hidden">
+  <div class="ob-inner">
+    <svg class="logomark ob-logo" viewBox="0 0 96 96" aria-hidden="true">
+        <circle cx="48" cy="48" r="44" fill="#0F7A6D"/>
+        <path d="M20 69 H76" stroke="#FAF3E8" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <circle class="lm-drop" cx="74" cy="26" r="3.5" fill="#C7F464"/>
+        <g class="lm-body" fill="none" stroke="#FAF3E8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 63 L45 54 L63 47"/>
+          <path d="M63 47.5 L60 56"/>
+          <circle cx="70.5" cy="42" r="6" fill="#FAF3E8" stroke="none"/>
+        </g>
+        <g fill="none" stroke="#FAF3E8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M60 56 L59 63"/>
+          <path d="M22 63 L20 69"/>
+        </g>
+      </svg>
+    <div class="wordmark">PUSH PACT</div>
+    <p class="ob-tag">Two friends. One escalating target.<br>No hiding.</p>
+    <p class="ob-fine">The daily target starts easy and climbs a little every Monday (the crew can tune it in Settings). Miss a day? Your excuse goes up where your friends can see it.</p>
+    <div id="ob-step-code">
+      <label class="lbl" for="crew-code">Crew code</label>
+      <input id="crew-code" type="text" autocomplete="off" autocapitalize="characters" placeholder="e.g. SWEAT2026">
+      <button id="ob-code-btn" class="btn btn-primary">Enter</button>
+      <p id="ob-code-err" class="err hidden"></p>
+    </div>
+    <div id="ob-step-profile" class="hidden">
+      <label class="lbl">Who are you?</label>
+      <div id="ob-existing" class="ob-existing"></div>
+      <div class="ob-new">
+        <input id="ob-name" type="text" placeholder="Your name" autocomplete="off">
+        <div id="ob-avatars" class="avatars"></div>
+        <div id="ob-colors" class="color-dots"></div>
+        <button id="ob-create-btn" class="btn btn-primary">Join the pact</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INSTALL HINT (shown in-browser only; gone once installed to home screen) -->
+<div id="install-hint" class="install-hint hidden">
+  <div class="ih-body">
+    <b>Make it a phone app</b>
+    <span id="ih-steps">Tap <span class="ih-icon">⎋</span> Share, then <b>Add to Home Screen</b>. Full screen, own icon, no browser.</span>
+  </div>
+  <button id="ih-close" aria-label="Dismiss">✕</button>
+</div>
+
+<div id="app" class="hidden">
+  <header class="app-head">
+    <div class="brand">
+      <svg class="logomark" viewBox="0 0 96 96" aria-hidden="true">
+        <circle cx="48" cy="48" r="44" fill="#0F7A6D"/>
+        <path d="M20 69 H76" stroke="#FAF3E8" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <circle class="lm-drop" cx="74" cy="26" r="3.5" fill="#C7F464"/>
+        <g class="lm-body" fill="none" stroke="#FAF3E8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 63 L45 54 L63 47"/>
+          <path d="M63 47.5 L60 56"/>
+          <circle cx="70.5" cy="42" r="6" fill="#FAF3E8" stroke="none"/>
+        </g>
+        <g fill="none" stroke="#FAF3E8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M60 56 L59 63"/>
+          <path d="M22 63 L20 69"/>
+        </g>
+      </svg>
+      <span class="wordmark sm">PUSH PACT</span>
+    </div>
+    <div id="head-date" class="head-date"></div>
+  </header>
+
+  <div id="local-banner" class="local-banner hidden"><span>Solo for now — pushups stay on this phone until your crew connects</span><button id="lb-close" aria-label="Dismiss">✕</button></div>
+
+  <!-- HOME -->
+  <main id="screen-home" class="screen">
+    <div class="home-hero">
+      <div class="hh-greet" id="hh-greet"></div>
+      <div class="hh-sub" id="hh-sub"></div>
+    </div>
+    <div class="home-card" id="home-mycard"></div>
+    <div class="home-crew" id="home-crew"></div>
+    <div id="home-postit" class="home-postit"></div>
+  </main>
+
+  <!-- TODAY / LOG -->
+  <main id="screen-today" class="screen hidden">
+    <div class="rope-row">
+      <span class="r-lbl">Streak</span>
+      <span class="strand"></span>
+      <span id="rope-knots" class="knots"></span>
+      <span id="rope-count" class="r-lbl ink"></span>
+    </div>
+
+    <div class="dial" id="dial">
+      <div class="ring" id="dial-ring"></div>
+      <div class="progress-ring" id="progress-ring"></div>
+      <div class="ticks"></div>
+      <div class="knob-arm" id="knob-arm"><div class="knob" id="knob">›</div></div>
+      <div class="dial-center">
+        <div id="compose" class="compose">&nbsp;</div>
+        <div id="tally" class="tally">0</div>
+        <div class="target-label"><span id="target-text"></span><span class="rule"></span><span id="togo-text"></span></div>
+      </div>
+    </div>
+
+    <div class="quick-chips" id="quick-chips">
+      <button class="qchip" data-add="5" aria-label="Add 5 pushups">+5</button>
+      <button class="qchip" data-add="10" aria-label="Add 10 pushups">+10</button>
+      <button class="qchip" data-add="20" aria-label="Add 20 pushups">+20</button>
+    </div>
+    <div class="bank-zone">
+      <button id="bank-btn" class="btn btn-primary btn-grad" disabled>Crank the dial to bank</button>
+    </div>
+
+    <div class="ledger">
+      <div class="l-title rope-title">Banked today</div>
+      <div id="ledger-rows" class="l-rows"></div>
+      <div id="mate-postit-zone"></div>
+    </div>
+
+    <div class="today-actions">
+      <button id="rest-btn" class="btn btn-ghost"></button>
+      <button id="excuse-btn" class="btn btn-ghost hidden">Write an excuse</button>
+    </div>
+  </main>
+
+  <!-- CREW -->
+  <main id="screen-crew" class="screen hidden">
+    <h2 class="screen-title">The Crew</h2>
+    <div id="crew-cards"></div>
+    <div class="crew-invite">
+      <div class="l-title rope-title">Invite a friend</div>
+      <p>Send them the app link and the crew code. They open it, enter the code, make a profile — in.</p>
+      <button id="share-btn" class="btn btn-ghost">Share invite</button>
+    </div>
+  </main>
+
+  <!-- HISTORY -->
+  <main id="screen-history" class="screen hidden">
+    <h2 class="screen-title">History</h2>
+    <div class="hist-controls">
+      <select id="hist-person"></select>
+      <div class="hist-nav">
+        <button id="hist-prev" class="mini-btn">‹</button>
+        <span id="hist-month"></span>
+        <button id="hist-next" class="mini-btn">›</button>
+      </div>
+    </div>
+    <div id="hist-grid" class="hist-grid"></div>
+    <div id="hist-detail" class="hist-detail hidden"></div>
+    <div class="legend">
+      <span><i class="dot met"></i>met</span><span><i class="dot rest"></i>rest</span>
+      <span><i class="dot excused"></i>excused</span><span><i class="dot missed"></i>missed</span>
+      <span><i class="dot pending"></i>pending</span>
+    </div>
+  </main>
+
+  <!-- SETTINGS -->
+  <main id="screen-settings" class="screen hidden">
+    <h2 class="screen-title">Settings</h2>
+    <div class="set-card">
+      <div class="l-title">The escalation</div>
+      <label class="lbl">Week-1 daily target <input id="set-start" type="number" min="1"></label>
+      <label class="lbl">Increase each Monday <input id="set-step" type="number" min="0"></label>
+      <label class="lbl">Cap <input id="set-cap" type="number" min="1"></label>
+      <label class="lbl">Rest days per week <input id="set-rest" type="number" min="0" max="7"></label>
+      <label class="lbl">Challenge start (Monday) <input id="set-startdate" type="date"></label>
+    </div>
+    <div class="set-card">
+      <div class="l-title">Crew</div>
+      <label class="lbl">Crew name <input id="set-crewname" type="text"></label>
+      <p class="hint">Crew code: <b id="set-crewcode"></b></p>
+      <p class="hint">Days roll over at midnight on your phone's clock. The app can't send iPhone notifications — set a daily alarm or Reminder if you want a prod.</p>
+    </div>
+    <button id="set-save" class="btn btn-primary btn-grad">Save settings</button>
+    <p id="set-msg" class="hint"></p>
+    <button id="set-switch" class="btn btn-ghost">Switch profile</button>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab on" data-screen="home" aria-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M4 11 L12 4 L20 11 V20 H14.5 V15 H9.5 V20 H4 Z"/></svg><span>Home</span>
+    </button>
+    <button class="tab" data-screen="today" aria-label="Log pushups">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="5.6" r="1.9" fill="currentColor" stroke="none"/></svg><span>Log</span>
+    </button>
+    <button class="tab" data-screen="crew" aria-label="Crew">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8.6" r="3.1"/><path d="M3.6 19c.6-3 2.7-4.6 5.4-4.6s4.8 1.6 5.4 4.6"/><circle cx="16.8" cy="9.8" r="2.5"/><path d="M15.9 14.6c2.5.3 4.1 1.7 4.6 4.4"/></svg><span>Crew</span>
+    </button>
+    <button class="tab" data-screen="history" aria-label="History">
+      <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2.5"/><path d="M4 10.5h16M8.5 4v4M15.5 4v4"/></svg><span>History</span>
+    </button>
+    <button class="tab" data-screen="settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><path d="M4.5 8.2h15M4.5 15.8h15"/><circle cx="9.5" cy="8.2" r="2.4"/><circle cx="14.5" cy="15.8" r="2.4"/></svg><span>Settings</span>
+    </button>
+  </nav>
+</div>
+
+<div id="av-tip" class="av-tip hidden"></div>
+
+<!-- EXCUSE MODAL -->
+<div id="excuse-modal" class="overlay hidden">
+  <div class="modal postit-modal">
+    <div class="l-title">Your excuse, for the record</div>
+    <div class="excuse-wrap">
+      <textarea id="excuse-text" class="excuse-input" rows="3" maxlength="140"></textarea>
+      <div id="excuse-ghost" class="excuse-ghost"><span></span></div>
+      <canvas id="excuse-canvas" class="excuse-canvas"></canvas>
+    </div>
+    <div class="modal-btns">
+      <button id="excuse-cancel" class="btn btn-ghost">Back to it</button>
+      <button id="excuse-save" class="btn btn-primary">Stick it up</button>
+    </div>
+    <button id="excuse-delete" class="btn excuse-tear hidden">Tear it up (delete this excuse)</button>
+  </div>
+</div>
+
+<script src="config.js" onerror="void 0"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

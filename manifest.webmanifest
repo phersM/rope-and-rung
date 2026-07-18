@@ -1,0 +1,13 @@
+{
+  "name": "Push Pact",
+  "short_name": "Push Pact",
+  "description": "Two mates. One escalating pushup target. No hiding.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FAF3E8",
+  "theme_color": "#FAF3E8",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
