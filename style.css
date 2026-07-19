@@ -326,9 +326,10 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .av{display:inline-flex;width:100%;height:100%;align-items:center;justify-content:center}
 .av svg{width:78%;height:78%;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .av svg [class^="aa-"]{transform-box:fill-box;transform-origin:center}
-.aa-pump{transform-box:view-box;transform-origin:9px 33px;animation:aaPump 1.2s ease-in-out infinite}
+.av svg .aa-pump{transform-box:view-box;transform-origin:9px 33px;animation:aaPump 1.2s ease-in-out infinite}
 @keyframes aaPump{50%{transform:rotate(8deg)}}
-.aa-flex{animation:aaFlex 1.5s ease-in-out infinite;transform-origin:left center}
+/* forearm pivots at the drawn elbow (26,24) so it never detaches from the upper arm */
+.av svg .aa-flex{transform-box:view-box;transform-origin:26px 24px;animation:aaFlex 1.5s ease-in-out infinite}
 @keyframes aaFlex{50%{transform:rotate(-32deg)}}
 .aa-brow{animation:aaBrow 2.4s ease-in-out infinite}
 @keyframes aaBrow{50%{transform:translateY(1.4px)}}
@@ -336,10 +337,20 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 @keyframes aaSweat{0%{transform:translateY(0);opacity:0}25%{opacity:1}100%{transform:translateY(11px);opacity:0}}
 .aa-bolt{fill:currentColor;fill-opacity:.15;animation:aaPulse 1.2s ease-in-out infinite}
 @keyframes aaPulse{50%{transform:scale(1.14)}}
-.aa-jump{animation:aaJump 1s ease-in-out infinite}
+/* star jump: pencil pose at rest, limbs snap out to the star at the jump's apex */
+.av svg .aa-sprBody{animation:aaJump 1.1s ease-in-out infinite}
 @keyframes aaJump{50%{transform:translateY(-3.5px)}}
-.aa-breath{animation:aaBreath 2.8s ease-in-out infinite}
-@keyframes aaBreath{50%{transform:scale(1.14) translateY(-1px)}}
+.av svg .aa-sprArmL{transform-box:view-box;transform-origin:24px 18px;animation:aaSprAL 1.1s ease-in-out infinite}
+@keyframes aaSprAL{0%,100%{transform:rotate(-124deg)}50%{transform:rotate(0deg)}}
+.av svg .aa-sprArmR{transform-box:view-box;transform-origin:24px 18px;animation:aaSprAR 1.1s ease-in-out infinite}
+@keyframes aaSprAR{0%,100%{transform:rotate(124deg)}50%{transform:rotate(0deg)}}
+.av svg .aa-sprLegL{transform-box:view-box;transform-origin:24px 27px;animation:aaSprLL 1.1s ease-in-out infinite}
+@keyframes aaSprLL{0%,100%{transform:rotate(-34deg)}50%{transform:rotate(0deg)}}
+.av svg .aa-sprLegR{transform-box:view-box;transform-origin:24px 27px;animation:aaSprLR 1.1s ease-in-out infinite}
+@keyframes aaSprLR{0%,100%{transform:rotate(34deg)}50%{transform:rotate(0deg)}}
+/* zen: whole torso rises and swells from the seat — a visible breath */
+.av svg .aa-zenTorso{transform-box:view-box;transform-origin:24px 30px;animation:aaBreath 3s ease-in-out infinite}
+@keyframes aaBreath{50%{transform:translateY(-1.6px) scale(1.05)}}
 .aa-rock{animation:aaRock 1.7s ease-in-out infinite}
 @keyframes aaRock{25%{transform:rotate(9deg)}75%{transform:rotate(-9deg)}}
 .aa-flick{animation:aaFlick 1.3s ease-in-out infinite}
@@ -348,13 +359,18 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 @keyframes aaTwinkle{50%{transform:rotate(12deg) scale(1.08)}}
 .aa-flag{animation:aaFlag 1.8s ease-in-out infinite;transform-origin:left bottom}
 @keyframes aaFlag{50%{transform:skewY(6deg)}}
-.aa-run{animation:aaRun .9s ease-in-out infinite}
-@keyframes aaRun{50%{transform:translateY(-2.5px) rotate(-3deg)}}
-.aa-bounce{animation:aaBounce 1.6s var(--ease-out) infinite}
-@keyframes aaBounce{30%{transform:translateY(-3px)}55%{transform:translateY(0)}}
-.aa-roll{animation:aaRoll 2.2s linear infinite}
-.aa-roll2{animation:aaRoll 2.2s linear infinite reverse}
-@keyframes aaRoll{50%{transform:translateX(-6px)}}
+/* runner: legs scissor alternately at the hip (22,26); torso stays put */
+.av svg .aa-runLegF{transform-box:view-box;transform-origin:22px 26px;animation:aaRunLeg .9s ease-in-out infinite}
+.av svg .aa-runLegB{transform-box:view-box;transform-origin:22px 26px;animation:aaRunLeg .9s ease-in-out infinite;animation-delay:-.45s}
+@keyframes aaRunLeg{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
+/* crown: seesaw about its base midpoint, baseline stays level */
+.av svg .aa-seesaw{transform-box:view-box;transform-origin:24px 34px;animation:aaSeesaw 1.8s ease-in-out infinite}
+@keyframes aaSeesaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+/* wave: paths extend one 14-unit wavelength past the viewBox so a linear
+   14px translate loops seamlessly; the two lines run in opposite directions */
+.av svg .aa-slide{animation:aaSlide 2.4s linear infinite}
+.av svg .aa-slide2{animation:aaSlide 3s linear infinite reverse}
+@keyframes aaSlide{to{transform:translateX(-14px)}}
 .av-emoji{font-size:inherit}
 .avatars .av{color:var(--ink)}
 .avatars button.sel .av{color:#FFFCF5}

@@ -90,15 +90,15 @@ const AVATAR_ART = {
   grit: '<svg viewBox="0 0 48 48"><circle cx="24" cy="25" r="15"/><g class="aa-brow"><path d="M16 20 L22 22 M32 20 L26 22"/></g><circle cx="20" cy="27" r="1.7" fill="currentColor" stroke="none"/><circle cx="28" cy="27" r="1.7" fill="currentColor" stroke="none"/><path d="M19 34 H29"/><circle class="aa-sweat" cx="41" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>',
   beast: '<svg viewBox="0 0 48 48"><circle cx="24" cy="27" r="13"/><path class="aa-brow" d="M15 21 H33"/><circle cx="19.5" cy="26" r="1.7" fill="currentColor" stroke="none"/><circle cx="28.5" cy="26" r="1.7" fill="currentColor" stroke="none"/><path d="M20 34 Q24 31 28 34"/><path d="M11 16 L17 11 M37 16 L31 11"/></svg>',
   bolt: '<svg viewBox="0 0 48 48"><path class="aa-bolt" d="M27 5 L13 27 H22 L19 43 L35 20 H25 Z"/></svg>',
-  spring: '<svg viewBox="0 0 48 48"><g class="aa-jump"><circle cx="24" cy="9" r="4.5"/><path d="M24 14 V27"/><path d="M24 18 L11 9 M24 18 L37 9"/><path d="M24 27 L13 40 M24 27 L35 40"/></g></svg>',
-  zen: '<svg viewBox="0 0 48 48"><circle cx="24" cy="13" r="4.5"/><path d="M24 18 V29"/><path d="M24 29 L11 37 M24 29 L37 37"/><path class="aa-breath" d="M14 25 Q24 18 34 25"/></svg>',
+  spring: '<svg viewBox="0 0 48 48"><g class="aa-sprBody"><circle cx="24" cy="9" r="4.5"/><path d="M24 14 V27"/><path class="aa-sprArmL" d="M24 18 L13 9"/><path class="aa-sprArmR" d="M24 18 L35 9"/><path class="aa-sprLegL" d="M24 27 L14 40"/><path class="aa-sprLegR" d="M24 27 L34 40"/></g></svg>',
+  zen: '<svg viewBox="0 0 48 48"><g class="aa-zenTorso"><circle cx="24" cy="10" r="4.5"/><path d="M24 15 V26"/><path d="M24 18 Q13 21 11 30 M24 18 Q35 21 37 30"/></g><path d="M10 33 Q24 25 38 33"/><path d="M14 37 H34" opacity=".5"/></svg>',
   bell: '<svg viewBox="0 0 48 48"><g class="aa-rock"><path d="M15 24 H33"/><rect x="8" y="15" width="6.5" height="18" rx="2.5"/><rect x="33.5" y="15" width="6.5" height="18" rx="2.5"/></g></svg>',
   flame: '<svg viewBox="0 0 48 48"><path class="aa-flick" d="M24 6 C28 14 34 17 34 27 A10 10 0 0 1 14 27 C14 20 20 16 24 6 Z"/><path d="M24 24 C26 28 28 29 28 32 A4 4 0 0 1 20 32 C20 29 22 27 24 24 Z" fill="currentColor" stroke="none" opacity=".8"/></svg>',
   star: '<svg viewBox="0 0 48 48"><path class="aa-twinkle" d="M24 6 L28.5 18 L41 19 L31 27 L34.5 40 L24 32.5 L13.5 40 L17 27 L7 19 L19.5 18 Z"/></svg>',
   peak: '<svg viewBox="0 0 48 48"><path d="M6 38 L20 14 L27 26 L33 18 L42 38 Z"/><path class="aa-flag" d="M20 14 V6 L27 9 L20 12"/></svg>',
-  runner: '<svg viewBox="0 0 48 48"><g class="aa-run"><circle cx="30" cy="10" r="4.5"/><path d="M28 15 L22 26 L28 34 L24 42"/><path d="M22 26 L14 30 M26 20 L36 24"/><path d="M22 26 L12 40"/></g></svg>',
-  crown: '<svg viewBox="0 0 48 48"><g class="aa-bounce"><path d="M10 34 L8 15 L18 24 L24 10 L30 24 L40 15 L38 34 Z"/><path d="M10 38 H38"/></g></svg>',
-  wave: '<svg viewBox="0 0 48 48"><path class="aa-roll" d="M6 30 Q13 22 20 30 T34 30 T48 30" fill="none"/><path class="aa-roll2" d="M2 38 Q9 31 16 38 T30 38 T44 38" fill="none" opacity=".5"/></svg>',
+  runner: '<svg viewBox="0 0 48 48"><circle cx="30" cy="10" r="4.5"/><path d="M28 15 L22 26"/><path d="M22 26 L14 30 M26 20 L36 24"/><path class="aa-runLegF" d="M22 26 L28 34 L24 42"/><path class="aa-runLegB" d="M22 26 L12 40"/></svg>',
+  crown: '<svg viewBox="0 0 48 48"><path class="aa-seesaw" d="M10 34 L8 15 L18 24 L24 10 L30 24 L40 15 L38 34 Z"/><path d="M10 38 H38"/></svg>',
+  wave: '<svg viewBox="0 0 48 48"><path class="aa-slide" d="M-8 30 Q-1 22 6 30 T20 30 T34 30 T48 30 T62 30" fill="none"/><path class="aa-slide2" d="M-12 38 Q-5 31 2 38 T16 38 T30 38 T44 38 T58 38 T72 38" fill="none" opacity=".5"/></svg>',
 };
 // avatar value format: "art" or "art.colour" (per-person icon colour)
 const AVATAR_COLORS = { teal: "#0F7A6D", pine: "#0B3B34", blue: "#5B7FA6", mustard: "#C98A2B", brick: "#B23A2E", ink: "#1F1B16" };
@@ -228,6 +228,17 @@ dial.addEventListener("pointerdown", (e) => {
   dial.classList.add("dragging");
   dial.setPointerCapture(e.pointerId);
 });
+// Safari can ignore touch-action:none mid-fast-crank and scroll the page;
+// a non-passive preventDefault is the only reliable stop.
+dial.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+
+// fast cranks fire pointermove faster than paint — coalesce renders to one per frame
+let dialRaf = 0;
+function scheduleDialRender() {
+  if (dialRaf) return;
+  dialRaf = requestAnimationFrame(() => { dialRaf = 0; renderDial(); });
+}
+
 dial.addEventListener("pointermove", (e) => {
   if (!dragging) return;
   const a = angleOf(e);
@@ -242,7 +253,7 @@ dial.addEventListener("pointermove", (e) => {
     // tiered haptics: tick per rep, firmer at fives, a thunk on each completed lap
     const c = Math.abs(state.compose);
     hapticTick(c && c % REPS_PER_REV === 0 ? 26 : c % 5 === 0 ? 9 : 3);
-    renderDial();
+    scheduleDialRender();
   }
 });
 ["pointerup", "pointercancel"].forEach((ev) =>
