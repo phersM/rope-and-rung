@@ -253,9 +253,20 @@ dial.addEventListener("pointermove", (e) => {
     // tiered haptics: tick per rep, firmer at fives, a thunk on each completed lap
     const c = Math.abs(state.compose);
     hapticTick(c && c % REPS_PER_REV === 0 ? 26 : c % 5 === 0 ? 9 : 3);
+    if (crossedRev(before, state.compose)) lapDischarge();
     scheduleDialRender();
   }
 });
+
+// council (Expansionist): the wind-up deserves a release — volt discharge on each full revolution
+function crossedRev(before, after) {
+  return after > 0 && Math.floor(after / REPS_PER_REV) > Math.floor(Math.max(0, before) / REPS_PER_REV);
+}
+function lapDischarge() {
+  dial.classList.add("discharge");
+  spawnSparks(10);
+  setTimeout(() => dial.classList.remove("discharge"), 600);
+}
 ["pointerup", "pointercancel"].forEach((ev) =>
   dial.addEventListener(ev, () => { dragging = false; dial.classList.remove("dragging"); }));
 
@@ -263,9 +274,11 @@ dial.addEventListener("pointermove", (e) => {
 document.querySelectorAll(".qchip").forEach((b) =>
   b.addEventListener("click", () => {
     const n = parseInt(b.dataset.add, 10);
+    const before = state.compose;
     state.rotation = Math.min(MAX_SET * DEG_PER_REP, state.rotation + n * DEG_PER_REP);
     state.compose = Math.round(state.rotation / DEG_PER_REP);
     hapticTick(5);
+    if (crossedRev(before, state.compose)) lapDischarge();
     renderDial();
   }));
 
@@ -288,9 +301,9 @@ $("bank-btn").addEventListener("click", async () => {
 });
 
 // volt spark burst from the dial rim on target smash
-function spawnSparks() {
+function spawnSparks(count = 26) {
   const r = dial.getBoundingClientRect().width / 2;
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < count; i++) {
     const s = document.createElement("span");
     s.className = "spark" + (i % 3 === 2 ? " teal" : "");
     const ang = Math.random() * Math.PI * 2;
@@ -308,7 +321,9 @@ function myTallyToday() { return dayTally(state.sets, state.me.id, today()); }
 // odometer-style count-up when the banked tally changes
 let shownTally = null;
 function animateTally(el, value) {
-  if (shownTally === null || shownTally === value ||
+  // council (Expansionist): the odometer roll is reserved for big banks (≥10) —
+  // a 5-rep top-up snapping in keeps the roll meaning something
+  if (shownTally === null || shownTally === value || Math.abs(value - shownTally) < 10 ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     el.textContent = value; shownTally = value; return;
   }
@@ -411,7 +426,7 @@ function renderToday() {
     const ex = state.statuses.find((st) => st.profile_id === m.id && st.kind === "excuse" &&
       (st.day === today() || st.day === addDays(today(), -1)));
     if (ex?.excuse_text) {
-      note = `<div class="postit"><small>${esc(m.name)} · ${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div>`;
+      note = `<div class="postit${postitCls(ex.day)}"><small>${esc(m.name)} · ${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div>`;
       break;
     }
   }
@@ -423,7 +438,7 @@ function renderToday() {
   const check = canDeclareRest(state.statuses, state.me.id, today(), state.settings);
   if (restedToday) restBtn.textContent = "Resting today ✓ (tap to undo)";
   else if (check.ok) restBtn.textContent = `Rest day · ${check.remaining} left`;
-  else restBtn.textContent = "No rest left this week";
+  else restBtn.textContent = "No rest left this week — pushups or an excuse";
   restBtn.disabled = !restedToday && !check.ok;
 
   // excuse button
@@ -437,11 +452,26 @@ function renderToday() {
 function stamps(n) {
   const count = Math.min(Math.abs(n), 30);
   let out = "";
-  for (let i = 1; i <= count; i++) out += `<i class="stamp${i % 5 === 0 ? " five" : ""}"></i>`;
+  for (let i = 1; i <= count; i++)
+    out += `<i class="stamp${i % 10 === 0 ? " five ten" : i % 5 === 0 ? " five" : ""}"></i>`;
   return out;
 }
 function fmtTime(iso) {
   return iso ? new Date(iso).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" }).toLowerCase() : "";
+}
+
+// council (Expansionist): a post-it curls a little more each day it hangs there.
+// True read-tracking needs the shared DB; until then age since posting stands in.
+function postitCls(day) {
+  const age = Math.min(3, Math.max(0, Math.round((parseDay(today()) - parseDay(day)) / 86400000)));
+  return age ? ` curl-${age}` : "";
+}
+
+// best single day, computed from the sets already in memory — pure display
+function personalBest(sets, pid) {
+  const per = {};
+  for (const s of sets) if (s.profile_id === pid) per[s.day] = (per[s.day] || 0) + s.reps;
+  return Object.values(per).reduce((a, b) => Math.max(a, b), 0);
 }
 
 function renderRope() {
@@ -452,9 +482,14 @@ function renderRope() {
   const st = dayState({ sets: state.sets, statuses: state.statuses, profileId: state.me.id, day: today(), today: today(), settings: state.settings });
   const atRisk = n > 0 && st.state === "pending";
   const urgent = atRisk && new Date().getHours() >= 17;
+  // council (Expansionist): the rope tells both stories — fraying when in danger,
+  // hanging slack and easy once today is banked
+  const safe = st.state === "met" || st.state === "rest";
   let knots = "";
   for (let i = 0; i < shown; i++) knots += `<span class="knot${n > 0 && i === shown - 1 ? " volt" : ""}"></span>`;
-  knots += `<span class="knot fray${atRisk ? " at-risk" : ""}${urgent ? " urgent" : ""}"></span>`;
+  knots += safe
+    ? '<span class="knot fray slack"></span>'
+    : `<span class="knot fray${atRisk ? " at-risk" : ""}${urgent ? " urgent" : ""}"></span>`;
   $("rope-knots").innerHTML = knots;
   $("rope-count").textContent = `${n} day${n === 1 ? "" : "s"}`;
 }
@@ -592,12 +627,12 @@ function renderCrew() {
         <div class="who">
           ${avatarChip(p.avatar)}
           <div><div class="nm">${esc(p.name)}${p.id === state.me.id ? " (you)" : ""}</div>
-          <div class="sub">${stk} day streak · ${total.toLocaleString()} all-time</div></div>
+          <div class="sub">${stk} day streak · ${total.toLocaleString()} all-time${personalBest(state.sets, p.id) > 0 ? ` <span class="pb-badge">PB ${personalBest(state.sets, p.id)}</span>` : ""}</div></div>
           <span class="state-chip bg-${st.state}">${stateLabel(st)}</span>
         </div>
         <div class="big"><span class="n">${st.tally}</span><span class="of">of ${st.target} today</span></div>
         <div class="strip">${strip}</div>
-        ${ex?.excuse_text && p.id !== state.me.id ? `<div class="postit"><small>${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div>` : ""}
+        ${ex?.excuse_text && p.id !== state.me.id ? `<div class="postit${postitCls(ex.day)}"><small>${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div>` : ""}
       </div>`;
   }).join("");
   $("crew-cards").innerHTML = cards;
@@ -622,14 +657,26 @@ function renderHistory() {
   const first = `${state.histMonth}-01`;
   const daysInMonth = new Date(y, m, 0).getDate();
   const lead = (parseDay(first).getDay() + 6) % 7;
-  let cells = ["M", "T", "W", "T", "F", "S", "S"].map((d) => `<span class="dow">${d}</span>`).join("");
-  for (let i = 0; i < lead; i++) cells += '<span class="hist-cell blank"></span>';
+  const days = [];
   for (let d = 1; d <= daysInMonth; d++) {
     const day = `${state.histMonth}-${String(d).padStart(2, "0")}`;
-    if (day > today()) { cells += `<span class="hist-cell future"><span class="d">${d}</span></span>`; continue; }
-    const st = dayState({ sets: state.sets, statuses: state.statuses, profileId: state.histPerson, day, today: today(), settings: state.settings });
-    cells += `<span class="hist-cell" data-day="${day}"><span class="d">${d}</span><span class="st bg-${st.state}"></span></span>`;
+    if (day > today()) { days.push({ d, day, future: true }); continue; }
+    days.push({ d, day, st: dayState({ sets: state.sets, statuses: state.statuses, profileId: state.histPerson, day, today: today(), settings: state.settings }) });
   }
+  // council (Expansionist): on a perfect month the dots join into a thin ink line.
+  // Perfect = every elapsed day met or rested (today, still pending, doesn't count against).
+  const judged = days.filter((x) => !x.future && !(x.day === today() && x.st.state === "pending"));
+  const perfect = judged.length >= 7 && judged.every((x) => x.st.state === "met" || x.st.state === "rest");
+  const lineEnd = judged.length ? judged[judged.length - 1].d : 0;
+  let cells = ["M", "T", "W", "T", "F", "S", "S"].map((d) => `<span class="dow">${d}</span>`).join("");
+  for (let i = 0; i < lead; i++) cells += '<span class="hist-cell blank"></span>';
+  for (const x of days) {
+    if (x.future) { cells += `<span class="hist-cell future"><span class="d">${x.d}</span></span>`; continue; }
+    const rowEnd = (lead + x.d) % 7 === 0;
+    const ink = x.d < lineEnd && !rowEnd ? " ink" : "";
+    cells += `<span class="hist-cell${ink}" data-day="${x.day}"><span class="d">${x.d}</span><span class="st bg-${x.st.state}"></span></span>`;
+  }
+  $("hist-grid").classList.toggle("perfect", perfect);
   $("hist-grid").innerHTML = cells;
   $("hist-grid").querySelectorAll(".hist-cell[data-day]").forEach((c) =>
     c.addEventListener("click", () => { state.histSelected = c.dataset.day; renderHistDetail(); }));
@@ -797,7 +844,7 @@ function renderHome() {
     const ex = state.statuses.find((x) => x.profile_id === m.id && x.kind === "excuse" &&
       (x.day === today() || x.day === addDays(today(), -1)));
     if (ex?.excuse_text) {
-      note = `<div class="postit"><small>${esc(m.name)} · ${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div>`;
+      note = `<div class="postit${postitCls(ex.day)}"><small>${esc(m.name)} · ${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div>`;
       break;
     }
   }
@@ -808,7 +855,7 @@ function renderHome() {
       .sort((a, b) => (a.day < b.day ? 1 : -1))[0];
     if (weekEx) {
       const who = state.profiles.find((p) => p.id === weekEx.profile_id);
-      note = `<div class="postit"><small>excuse of the week · ${esc(who?.name ?? "?")}</small>${esc(weekEx.excuse_text)}</div>`;
+      note = `<div class="postit${postitCls(weekEx.day)}"><small>excuse of the week · ${esc(who?.name ?? "?")}</small>${esc(weekEx.excuse_text)}</div>`;
     }
   }
   $("home-postit").innerHTML = note;
@@ -851,7 +898,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) refe
     if (!p) return;
     const st = dayState({ sets: state.sets, statuses: state.statuses, profileId: p.id, day: today(), today: today(), settings: state.settings });
     const stk = streak({ sets: state.sets, statuses: state.statuses, profileId: p.id, today: today(), settings: state.settings });
-    tip.innerHTML = `<b>${esc(p.name)}</b>${st.tally} / ${st.target} today · <span class="tip-volt">${stk} day streak</span><br>${allTimeTotal(state.sets, p.id).toLocaleString()} all-time`;
+    tip.innerHTML = `<b>${esc(p.name)}</b>${st.tally} / ${st.target} today · <span class="tip-volt">${stk} day streak</span><br>${allTimeTotal(state.sets, p.id).toLocaleString()} all-time${personalBest(state.sets, p.id) > 0 ? ` · PB ${personalBest(state.sets, p.id)}` : ""}`;
     const r = av.getBoundingClientRect();
     tip.classList.remove("hidden");
     const w = tip.offsetWidth;
