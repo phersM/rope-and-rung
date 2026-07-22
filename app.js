@@ -146,7 +146,7 @@ const AVATARS = ["pumper", "flex", "grit", "beast", "bolt", "spring", "zen", "be
 
 $("ob-code-btn").addEventListener("click", async () => {
   const code = $("crew-code").value.trim().toUpperCase();
-  if (code.length < 4) return obErr("Code needs at least 4 characters.");
+  if (code.length < 6) return obErr("Code needs at least 6 characters — the code is what keeps your crew private, so give it a bit more entropy than a word.");
   try {
     let crew = await state.adapter.findCrew(code);
     if (!crew) {

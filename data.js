@@ -70,77 +70,77 @@ export class LocalAdapter {
   subscribe() { return () => {}; }
 }
 
+// All reads/writes go through SECURITY DEFINER Postgres functions (see
+// supabase/schema.sql) that re-validate crew_code against crew_id on every
+// call — anon has zero direct table grants. This adapter keeps this.code /
+// this.crewId from the join step and threads them into every RPC so no
+// caller in app.js needs to change.
 export class SupabaseAdapter {
   constructor(cfg, supabaseLib) {
     this.cfg = cfg; this.lib = supabaseLib; this.shared = true; this.client = null;
+    this.code = null; this.crewId = null;
   }
   async init() {
     this.client = this.lib.createClient(this.cfg.url, this.cfg.anonKey);
   }
   async findCrew(code) {
-    const { data, error } = await this.client.from("crews").select("*").eq("crew_code", code).maybeSingle();
+    const { data, error } = await this.client.rpc("find_crew", { p_code: code });
     if (error) throw error;
+    if (data) { this.code = code; this.crewId = data.id; }
     return data;
   }
   async createCrew(code, defaults) {
-    const { data, error } = await this.client.from("crews")
-      .insert({ name: "The Pact", crew_code: code, settings: defaults }).select().single();
+    const { data, error } = await this.client.rpc("create_crew", { p_code: code, p_settings: defaults });
     if (error) throw error;
+    this.code = code; this.crewId = data.id;
     return data;
   }
   async listProfiles(crewId) {
-    const { data, error } = await this.client.from("profiles").select("*").eq("crew_id", crewId).order("created_at");
+    const { data, error } = await this.client.rpc("crew_profiles", { p_code: this.code, p_crew_id: crewId });
     if (error) throw error;
-    return data;
+    return data ?? [];
   }
   async createProfile(crewId, name, avatar) {
-    const { data, error } = await this.client.from("profiles")
-      .insert({ crew_id: crewId, name, avatar }).select().single();
+    const { data, error } = await this.client.rpc("create_profile",
+      { p_code: this.code, p_crew_id: crewId, p_name: name, p_avatar: avatar });
     if (error) throw error;
     return data;
   }
   async fetchAll(crewId) {
-    const [{ data: crew }, { data: profiles }] = await Promise.all([
-      this.client.from("crews").select("*").eq("id", crewId).single(),
-      this.client.from("profiles").select("*").eq("crew_id", crewId).order("created_at"),
-    ]);
-    const pids = (profiles ?? []).map((p) => p.id);
-    const [{ data: sets }, { data: statuses }] = await Promise.all([
-      this.client.from("sets").select("*").in("profile_id", pids),
-      this.client.from("day_status").select("*").in("profile_id", pids),
-    ]);
-    return { crew, profiles: profiles ?? [], sets: sets ?? [], statuses: statuses ?? [] };
+    const { data, error } = await this.client.rpc("crew_bundle", { p_code: this.code, p_crew_id: crewId });
+    if (error) throw error;
+    return { crew: data.crew, profiles: data.profiles ?? [], sets: data.sets ?? [], statuses: data.statuses ?? [] };
   }
   async addSet(profileId, day, reps) {
-    const { error } = await this.client.from("sets").insert({ profile_id: profileId, day, reps });
+    const { error } = await this.client.rpc("add_set",
+      { p_code: this.code, p_crew_id: this.crewId, p_profile_id: profileId, p_day: day, p_reps: reps });
     if (error) throw error;
   }
   async addStatus(row) {
-    const { error } = await this.client.from("day_status").insert(row);
+    const { error } = await this.client.rpc("add_status", {
+      p_code: this.code, p_crew_id: this.crewId, p_profile_id: row.profile_id,
+      p_day: row.day, p_kind: row.kind, p_excuse_text: row.excuse_text ?? null,
+    });
     if (error) throw error;
   }
   async removeSet(setId) {
-    const { error } = await this.client.from("sets").delete().eq("id", setId);
+    const { error } = await this.client.rpc("remove_set",
+      { p_code: this.code, p_crew_id: this.crewId, p_set_id: setId });
     if (error) throw error;
   }
   async removeStatus(profileId, day, kind) {
-    const { error } = await this.client.from("day_status").delete()
-      .eq("profile_id", profileId).eq("day", day).eq("kind", kind);
+    const { error } = await this.client.rpc("remove_status",
+      { p_code: this.code, p_crew_id: this.crewId, p_profile_id: profileId, p_day: day, p_kind: kind });
     if (error) throw error;
   }
   async saveSettings(crewId, settings, name) {
-    const patch = { settings }; if (name) patch.name = name;
-    const { error } = await this.client.from("crews").update(patch).eq("id", crewId);
+    const { error } = await this.client.rpc("save_settings",
+      { p_code: this.code, p_crew_id: crewId, p_settings: settings, p_name: name ?? "" });
     if (error) throw error;
   }
-  subscribe(crewId, cb) {
-    const ch = this.client.channel("pushpact")
-      .on("postgres_changes", { event: "*", schema: "public", table: "sets" }, cb)
-      .on("postgres_changes", { event: "*", schema: "public", table: "day_status" }, cb)
-      .on("postgres_changes", { event: "*", schema: "public", table: "crews" }, cb)
-      .subscribe();
-    return () => this.client.removeChannel(ch);
-  }
+  // Realtime intentionally not wired — see schema.sql note. Falls back to
+  // the app's existing refetch-after-mutation + refetch-on-focus behaviour.
+  subscribe() { return () => {}; }
 }
 
 export async function makeAdapter() {
