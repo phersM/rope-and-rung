@@ -757,6 +757,12 @@ function num(id, min) { const v = parseInt($(id).value, 10); return Number.isFin
 
 $("set-switch").addEventListener("click", () => { session.clear(); location.reload(); });
 
+$("set-erase").addEventListener("click", () => {
+  if (!confirm("Erase every crew, profile, and logged set on this phone? This can't be undone.")) return;
+  Object.keys(localStorage).filter((k) => k.startsWith("pushpact-")).forEach((k) => localStorage.removeItem(k));
+  location.reload();
+});
+
 // ---------- shell ----------
 
 function switchScreen(name) {
@@ -794,6 +800,15 @@ function stateLabel(st) {
   return st.state;
 }
 
+// Home quick-add: instant, no ceremony — same "just log it" pattern as
+// History's "Log to this day" input, not the dial's stage-then-bank flow.
+async function homeQuickAdd(n) {
+  await state.adapter.addSet(state.me.id, today(), n);
+  hapticTick(10);
+  localStorage.setItem("pushpact-banks", String((parseInt(localStorage.getItem("pushpact-banks"), 10) || 0) + 1));
+  await refetch();
+}
+
 function renderHome() {
   const h = new Date().getHours();
   const part = h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening";
@@ -801,8 +816,8 @@ function renderHome() {
   const start = state.settings.challenge_start;
   const wk = Math.floor(Math.max(0, (parseDay(today()) - parseDay(start)) / 86400000) / 7) + 1;
   $("hh-sub").textContent = today() < start
-    ? `Warm-up — the pact begins ${parseDay(start).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}`
-    : `Week ${wk} of the pact · target ${targetFor(today(), state.settings)}/day`;
+    ? `Warm-up — the climb begins ${parseDay(start).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}`
+    : `Week ${wk} of the climb · target ${targetFor(today(), state.settings)}/day`;
 
   const st = dayState({ sets: state.sets, statuses: state.statuses, profileId: state.me.id, day: today(), today: today(), settings: state.settings });
   const stk = streak({ sets: state.sets, statuses: state.statuses, profileId: state.me.id, today: today(), settings: state.settings });
@@ -811,10 +826,10 @@ function renderHome() {
     .filter((s) => s.profile_id === state.me.id && s.day >= ws && s.day <= today())
     .reduce((a, s) => a + s.reps, 0);
   const pct = Math.min(100, Math.round((st.tally / st.target) * 100));
-  // council: leading with "0 day streak" demotivates — show day-of-pact instead
+  // council: leading with "0 day streak" demotivates — show day-of-climb instead
   const dayN = Math.max(1, Math.floor((parseDay(today()) - parseDay(start)) / 86400000) + 1);
   const weekPart = weekTotal > 0 ? ` · ${weekTotal} banked this week` : "";
-  const streakLine = stk > 0 ? `${stk} day streak` : (today() < start ? "warm-up" : `day ${dayN} of the pact`);
+  const streakLine = stk > 0 ? `${stk} day streak` : (today() < start ? "warm-up" : `day ${dayN} of the climb`);
   // council: warn the night before the target rises, never spring it
   const nudge = targetFor(addDays(today(), 1), state.settings) > st.target
     ? ` · target rises to ${targetFor(addDays(today(), 1), state.settings)} tomorrow` : "";
@@ -823,8 +838,15 @@ function renderHome() {
     <div class="hc-nums"><span class="hc-tally">${st.tally}</span><span class="hc-of">/ ${st.target}</span></div>
     <div class="hc-bar"><span style="width:${pct}%"></span></div>
     <div class="hc-meta">${streakLine}${weekPart}${nudge}</div>
+    <div class="hc-chips">
+      <button class="hc-chip" data-home-add="5">+5</button>
+      <button class="hc-chip" data-home-add="10">+10</button>
+      <button class="hc-chip" data-home-add="20">+20</button>
+    </div>
     <button class="btn hc-cta" id="hc-cta">Log pushups ›</button>`;
   $("hc-cta").addEventListener("click", () => switchScreen("today"));
+  $("home-mycard").querySelectorAll(".hc-chip").forEach((b) =>
+    b.addEventListener("click", () => homeQuickAdd(parseInt(b.dataset.homeAdd, 10))));
 
   // Owner decision 2026-07-17: everyone always sees their OWN card first, then the
   // team's — solo use is first-class (supersedes the council's mates-first inversion).

@@ -21,7 +21,7 @@ export class LocalAdapter {
   }
   async createCrew(code, defaults) {
     const db = this._db();
-    const crew = { id: uid(), name: "The Pact", crew_code: code, settings: defaults };
+    const crew = { id: uid(), name: "The Climb", crew_code: code, settings: defaults };
     db.crews.push(crew); this._save(db); return crew;
   }
   async listProfiles(crewId) { return this._db().profiles.filter((p) => p.crew_id === crewId); }

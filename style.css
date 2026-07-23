@@ -32,11 +32,15 @@ body{
 
 .wordmark{display:block}
 .wordmark.sm{flex:none}
+/* volt bead travels the rope's own path (under-strand into over-strand, tip to tip), looping */
+.rr-pulse{offset-path:path("M 6 34 C 18 34, 22 26, 32 24 C 44 22, 54 26, 52 34 C 50 42, 38 42, 36 34 C 34 26, 44 24, 50 28 C 58 33, 70 34, 90 34");animation:rrPulse 2.6s linear infinite}
+@keyframes rrPulse{0%{offset-distance:0%}100%{offset-distance:100%}}
 /* logo: pushup figure in the ring — feet planted, body pivots at the feet like a real rep */
 .logomark .lm-body{transform-box:view-box;transform-origin:22px 63px;animation:lmPush 1.7s ease-in-out infinite}
 @keyframes lmPush{50%{transform:rotate(7deg)}}
-.logomark .lm-drop{animation:lmDrop 3.2s ease-in infinite;opacity:0}
-@keyframes lmDrop{0%,55%{opacity:0;transform:translateY(0)}62%{opacity:1}88%{opacity:1;transform:translateY(26px)}100%{opacity:0;transform:translateY(30px)}}
+/* volt dot orbits the disc once per rep, synced to lmPush's 1.7s cycle */
+.logomark .lm-orbit{transform-box:view-box;transform-origin:48px 48px;animation:lmOrbit 1.7s linear infinite}
+@keyframes lmOrbit{to{transform:rotate(360deg)}}
 
 .app-head{display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 22px 0}
 .brand{display:flex;align-items:center;gap:8px}
@@ -72,7 +76,11 @@ body{
 .hc-bar{height:8px;border-radius:4px;background:rgba(255,252,245,.22);margin-top:14px;overflow:hidden}
 .hc-bar span{display:block;height:100%;border-radius:4px;background:var(--volt);transition:width .6s var(--ease-out)}
 .hc-meta{font-size:13px;font-weight:600;opacity:.85;margin-top:10px}
-.btn.hc-cta{width:100%;margin-top:16px;background:var(--volt);color:var(--pine);font-weight:800;border-radius:var(--r-md);box-shadow:0 6px 18px rgba(199,244,100,.3)}
+.hc-chips{display:flex;gap:8px;margin-top:14px}
+.hc-chip{flex:1;min-height:40px;border:1px solid rgba(255,252,245,.3);background:rgba(255,252,245,.14);border-radius:999px;
+  font-family:Archivo,sans-serif;font-weight:800;font-size:15px;color:#FFFCF5;cursor:pointer;transition:transform .15s var(--ease-out),background .2s}
+.hc-chip:active{transform:scale(.94);background:rgba(255,252,245,.26)}
+.btn.hc-cta{width:100%;margin-top:12px;background:var(--volt);color:var(--pine);font-weight:800;border-radius:var(--r-md);box-shadow:0 6px 18px rgba(199,244,100,.3)}
 .week-strip{padding:18px 22px 0}
 .ws-head{display:flex;align-items:baseline;justify-content:space-between}
 .ws-summary{font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -279,6 +287,11 @@ body{
 .set-card input[type=date],#set-crewname{font-family:"Instrument Sans",sans-serif;font-weight:600;text-align:left}
 #set-save{margin:16px 22px 0}
 #set-switch{margin:10px 22px 0}
+.danger-zone{margin-top:28px;border-color:rgba(178,58,46,.35)}
+.danger-zone .l-title{color:var(--missed)}
+.danger-zone .hint{margin-top:4px}
+.btn.danger{width:100%;margin-top:10px;color:var(--missed);border-color:rgba(178,58,46,.4)}
+.btn.danger:active{background:rgba(178,58,46,.08)}
 #set-msg{padding:0 22px}
 
 /* tabbar */
