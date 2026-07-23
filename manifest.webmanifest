@@ -1,7 +1,7 @@
 {
   "name": "Rope & Rung",
   "short_name": "Rope & Rung",
-  "description": "Two friends. One escalating pushup target. No hiding.",
+  "description": "One escalating pushup target. No hiding.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#FAF3E8",

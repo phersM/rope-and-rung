@@ -30,8 +30,8 @@ body{
 #app{max-width:430px;margin:0 auto;min-height:100svh;display:flex;flex-direction:column}
 .hidden{display:none!important}
 
-.wordmark{font-family:Archivo,sans-serif;font-weight:900;font-style:italic;letter-spacing:.02em}
-.wordmark.sm{font-size:16px}
+.wordmark{display:block}
+.wordmark.sm{flex:none}
 /* logo: pushup figure in the ring — feet planted, body pivots at the feet like a real rep */
 .logomark .lm-body{transform-box:view-box;transform-origin:22px 63px;animation:lmPush 1.7s ease-in-out infinite}
 @keyframes lmPush{50%{transform:rotate(7deg)}}
@@ -412,7 +412,6 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")}
 #excuse-modal{background:rgba(31,27,22,.45)}
 .ob-inner{width:100%;max-width:340px}
-.ob-inner .wordmark{font-size:44px}
 .ob-tag{font-size:15px;color:var(--muted);margin:10px 0 26px;line-height:1.45}
 .ob-inner input[type=text]{width:100%;padding:14px;border:1px solid var(--hair);background:var(--card);font-family:Archivo,sans-serif;font-weight:700;font-size:18px;letter-spacing:.06em;color:var(--ink)}
 .ob-inner .btn{width:100%;margin-top:12px}

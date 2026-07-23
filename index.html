@@ -18,6 +18,36 @@
 </head>
 <body>
 
+<!-- WORDMARK SPRITE: the knot woven into the type (DESIGN.md "Brand Identity" —
+     canonical knot path data, unedited; text glow+halo tuned 2026-07-23) -->
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+  <defs>
+    <filter id="rrGlowW" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur in="SourceGraphic" stdDeviation="10"/></filter>
+    <filter id="rrGlowT" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="3.2"/></filter>
+    <symbol id="rr-wordmark" viewBox="20 24 674 168">
+      <g transform="translate(151.8,-15.4) scale(3.7)">
+        <path d="M 6 34 C 18 34, 22 26, 32 24 C 44 22, 54 26, 52 34 C 50 42, 38 42, 36 34" fill="none" stroke="#0F7A6D" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g font-family="Archivo, sans-serif" font-weight="900" font-style="italic" letter-spacing="0.01em">
+        <text x="225" y="104" font-size="56" text-anchor="end" fill="#0F7A6D" opacity="0.30" filter="url(#rrGlowW)">ROPE</text>
+        <text x="225" y="104" font-size="56" text-anchor="end" fill="#0F7A6D" opacity="0.65" filter="url(#rrGlowT)">ROPE</text>
+        <text x="225" y="104" font-size="56" text-anchor="end" fill="#FAF3E8" stroke="#FAF3E8" stroke-width="4" stroke-linejoin="round">ROPE</text>
+        <text x="225" y="104" font-size="56" text-anchor="end" fill="#1F1B16">ROPE</text>
+      </g>
+      <g transform="translate(151.8,-15.4) scale(3.7)">
+        <path d="M 36 34 C 34 26, 44 24, 50 28 C 58 33, 70 34, 90 34" fill="none" stroke="#FAF3E8" stroke-width="12.5" stroke-linecap="round"/>
+        <path d="M 36 34 C 34 26, 44 24, 50 28 C 58 33, 70 34, 90 34" fill="none" stroke="#0F7A6D" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g font-family="Archivo, sans-serif" font-weight="900" font-style="italic" letter-spacing="0.01em">
+        <text x="355" y="148" font-size="56" text-anchor="start" fill="#0F7A6D" opacity="0.30" filter="url(#rrGlowW)">RUNG</text>
+        <text x="355" y="148" font-size="56" text-anchor="start" fill="#0F7A6D" opacity="0.65" filter="url(#rrGlowT)">RUNG</text>
+        <text x="355" y="148" font-size="56" text-anchor="start" fill="#FAF3E8" stroke="#FAF3E8" stroke-width="4" stroke-linejoin="round">RUNG</text>
+        <text x="355" y="148" font-size="56" text-anchor="start" fill="#1F1B16">RUNG</text>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
 <!-- ONBOARDING -->
 <div id="onboarding" class="overlay hidden">
   <div class="ob-inner">
@@ -35,8 +65,8 @@
           <path d="M22 63 L20 69"/>
         </g>
       </svg>
-    <div class="wordmark">ROPE &amp; RUNG</div>
-    <p class="ob-tag">Two friends. One escalating target.<br>No hiding.</p>
+    <svg class="wordmark" viewBox="20 24 674 168" width="300" height="75" role="img" aria-label="Rope &amp; Rung"><use href="#rr-wordmark"></use></svg>
+    <p class="ob-tag">One escalating target.<br>No hiding.</p>
     <p class="ob-fine">The daily target starts easy and climbs a little every Monday (the crew can tune it in Settings). Miss a day? Your excuse goes up where your friends can see it.</p>
     <div id="ob-step-code">
       <label class="lbl" for="crew-code">Crew code</label>
@@ -83,7 +113,7 @@
           <path d="M22 63 L20 69"/>
         </g>
       </svg>
-      <span class="wordmark sm">ROPE &amp; RUNG</span>
+      <svg class="wordmark sm" viewBox="20 24 674 168" width="80" height="20" role="img" aria-label="Rope &amp; Rung"><use href="#rr-wordmark"></use></svg>
     </div>
     <div id="head-date" class="head-date"></div>
   </header>
