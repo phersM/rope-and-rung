@@ -32,9 +32,19 @@ body{
 
 .wordmark{display:block}
 .wordmark.sm{flex:none}
-/* volt bead travels the rope's own path (under-strand into over-strand, tip to tip), looping */
-.rr-pulse{offset-path:path("M 6 34 C 18 34, 22 26, 32 24 C 44 22, 54 26, 52 34 C 50 42, 38 42, 36 34 C 34 26, 44 24, 50 28 C 58 33, 70 34, 90 34");animation:rrPulse 2.6s linear infinite}
-@keyframes rrPulse{0%{offset-distance:0%}100%{offset-distance:100%}}
+/* a small lantern-glow travels the rope's own path, tip to tip, one full pass
+   per 3 pushup reps (3 x 1.7s = 5.1s). Split into two elements living inside
+   the under-/over-strand's own <g> (not a separate top layer) so it sits at
+   the SAME depth as the rope itself there -- it disappears under the ROPE/
+   RUNG lettering and under the strand crossing exactly like the rope does,
+   instead of floating flatly on top of everything. Handoff point (55.6%) is
+   the real under-strand/over-strand length ratio, measured via
+   getTotalLength(), not eyeballed, so the speed feels roughly constant
+   across the direction change. */
+.rr-lantern-a{offset-path:path("M 6 34 C 18 34, 22 26, 32 24 C 44 22, 54 26, 52 34 C 50 42, 38 42, 36 34");animation:rrPulseA 5.1s linear infinite}
+.rr-lantern-b{offset-path:path("M 36 34 C 34 26, 44 24, 50 28 C 58 33, 70 34, 90 34");animation:rrPulseB 5.1s linear infinite}
+@keyframes rrPulseA{0%{offset-distance:0%;opacity:1}55.6%{offset-distance:100%;opacity:1}55.7%{opacity:0}100%{opacity:0;offset-distance:100%}}
+@keyframes rrPulseB{0%,55.6%{opacity:0;offset-distance:0%}55.7%{opacity:1;offset-distance:0%}100%{opacity:1;offset-distance:100%}}
 /* logo: pushup figure in the ring — feet planted, body pivots at the feet like a real rep */
 .logomark .lm-body{transform-box:view-box;transform-origin:22px 63px;animation:lmPush 1.7s ease-in-out infinite}
 @keyframes lmPush{50%{transform:rotate(7deg)}}
