@@ -1,4 +1,4 @@
-// Push Pact — data layer. Two adapters behind one interface:
+// Rope & Rung — data layer. Two adapters behind one interface:
 //   LocalAdapter    — localStorage only (solo mode, works before Supabase is wired)
 //   SupabaseAdapter — shared crew database (window.PUSHPACT_CONFIG = {url, anonKey} in config.js)
 //

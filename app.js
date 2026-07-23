@@ -1,4 +1,4 @@
-// Push Pact — app shell. Pure rules live in logic.js; storage in data.js.
+// Rope & Rung — app shell. Pure rules live in logic.js; storage in data.js.
 
 import {
   toDayStr, addDays, parseDay, targetFor, dayTally, allTimeTotal, isLate,
@@ -640,7 +640,7 @@ function renderCrew() {
 
 $("share-btn").addEventListener("click", async () => {
   const link = `${location.origin}${location.pathname}?code=${encodeURIComponent(state.crew.crew_code)}`;
-  const msg = `Push Pact — daily pushups, no hiding. Open ${link} (crew code ${state.crew.crew_code} is pre-filled)`;
+  const msg = `Rope & Rung — daily pushups, no hiding. Open ${link} (crew code ${state.crew.crew_code} is pre-filled)`;
   if (navigator.share) { try { await navigator.share({ text: msg }); } catch {} }
   else { await navigator.clipboard.writeText(msg); $("share-btn").textContent = "Copied!"; setTimeout(() => $("share-btn").textContent = "Share invite", 1500); }
 });
@@ -859,6 +859,31 @@ function renderHome() {
     }
   }
   $("home-postit").innerHTML = note;
+  renderWeekStrip();
+}
+
+// council-shape vocabulary reused from History (met=circle, rest=square, excused=diamond,
+// missed=dash, pending=hollow) so the week-at-a-glance strip reads the same way colourblind.
+function renderWeekStrip() {
+  const ws = weekStartOf(today());
+  const dowLabels = ["M", "T", "W", "T", "F", "S", "S"];
+  let met = 0, judged = 0;
+  const days = dowLabels.map((lbl, i) => {
+    const day = addDays(ws, i);
+    const isToday = day === today();
+    if (day > today()) return { lbl, day, future: true, isToday };
+    const st = dayState({ sets: state.sets, statuses: state.statuses, profileId: state.me.id, day, today: today(), settings: state.settings });
+    if (st.state !== "pending") { judged++; if (st.state === "met" || st.state === "rest") met++; }
+    return { lbl, day, state: st.state, isToday };
+  });
+  $("ws-days").innerHTML = days.map((d) => `
+    <div class="ws-day${d.isToday ? " today" : ""}${d.future ? " future" : ""}" ${d.future ? "" : `data-day="${d.day}"`}>
+      <span class="ws-dow">${d.lbl}</span>
+      <span class="ws-dot${d.future ? "" : ` bg-${d.state}`}"></span>
+    </div>`).join("");
+  $("ws-summary").textContent = judged ? `${met}/${judged} this week` : "";
+  $("ws-days").querySelectorAll(".ws-day[data-day]").forEach((c) =>
+    c.addEventListener("click", () => { state.histMonth = c.dataset.day.slice(0, 7); state.histPerson = state.me.id; state.histSelected = c.dataset.day; switchScreen("history"); }));
 }
 function weekStartOf(d) {
   const shift = (parseDay(d).getDay() + 6) % 7;

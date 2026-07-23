@@ -1,4 +1,4 @@
-// Push Pact — pure logic core. No DOM, no network. Imported by app.js and tests.
+// Rope & Rung — pure logic core. No DOM, no network. Imported by app.js and tests.
 
 // ---- dates (all date-only strings "YYYY-MM-DD", local time) ----
 

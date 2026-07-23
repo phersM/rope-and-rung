@@ -73,6 +73,19 @@ body{
 .hc-bar span{display:block;height:100%;border-radius:4px;background:var(--volt);transition:width .6s var(--ease-out)}
 .hc-meta{font-size:13px;font-weight:600;opacity:.85;margin-top:10px}
 .btn.hc-cta{width:100%;margin-top:16px;background:var(--volt);color:var(--pine);font-weight:800;border-radius:var(--r-md);box-shadow:0 6px 18px rgba(199,244,100,.3)}
+.week-strip{padding:18px 22px 0}
+.ws-head{display:flex;align-items:baseline;justify-content:space-between}
+.ws-summary{font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.ws-track{position:relative;margin-top:14px}
+.ws-strand{position:absolute;left:5px;right:5px;top:26px;height:4px;border-radius:2px;background:var(--hair)}
+.ws-days{position:relative;display:flex;justify-content:space-between}
+.ws-day{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;cursor:pointer}
+.ws-day.future{cursor:default}
+.ws-dow{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.ws-day.today .ws-dow{color:var(--ink)}
+.ws-dot{position:relative;z-index:1;background:var(--paper)}
+.ws-day.today .ws-dot{box-shadow:0 0 0 3px rgba(199,244,100,.55)}
+.ws-day.future .ws-dot{width:7px;height:7px;border-radius:50%;background:transparent;border:1.5px dashed var(--hair)}
 .home-crew{padding:20px 22px 0}
 .home-crew .row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--hair);border-radius:var(--r-md);
   box-shadow:var(--shadow-card);padding:11px 12px;margin-bottom:8px;animation:rowIn .4s var(--ease-out) backwards}
@@ -249,11 +262,12 @@ body{
 .legend .dot{display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:4px}
 .dot.met{background:var(--met)}.dot.rest{background:var(--rest)}.dot.excused{background:var(--excused)}.dot.missed{background:var(--missed)}.dot.pending{background:var(--pending)}
 /* colourblind-safe: each day-state gets a distinct SHAPE, not just a colour */
-.hist-cell .st.bg-met,.legend .dot.met{border-radius:50%}
-.hist-cell .st.bg-rest,.legend .dot.rest{border-radius:1.5px}
-.hist-cell .st.bg-excused,.legend .dot.excused{border-radius:1.5px;transform:rotate(45deg)}
-.hist-cell .st.bg-missed,.legend .dot.missed{width:11px;height:3px;border-radius:1.5px}
-.hist-cell .st.bg-pending,.legend .dot.pending{background:transparent;border:2px solid var(--pending);width:7px;height:7px}
+.ws-dot{width:9px;height:9px;border-radius:4px}
+.hist-cell .st.bg-met,.legend .dot.met,.ws-dot.bg-met{border-radius:50%}
+.hist-cell .st.bg-rest,.legend .dot.rest,.ws-dot.bg-rest{border-radius:1.5px}
+.hist-cell .st.bg-excused,.legend .dot.excused,.ws-dot.bg-excused{border-radius:1.5px;transform:rotate(45deg)}
+.hist-cell .st.bg-missed,.legend .dot.missed,.ws-dot.bg-missed{width:11px;height:3px;border-radius:1.5px}
+.hist-cell .st.bg-pending,.legend .dot.pending,.ws-dot.bg-pending{background:transparent;border:2px solid var(--pending);width:7px;height:7px}
 .local-banner{display:flex;align-items:center;gap:8px;justify-content:space-between}
 #lb-close{border:none;background:none;color:var(--rest);font-size:13px;cursor:pointer;padding:6px;min-width:32px}
 .bg-met{background:var(--met)}.bg-rest{background:var(--rest)}.bg-excused{background:var(--excused)}.bg-missed{background:var(--missed)}.bg-pending{background:var(--pending)}

@@ -1,4 +1,4 @@
-// Push Pact service worker — network-first with cache fallback.
+// Rope & Rung service worker — network-first with cache fallback.
 // Fresh when online, fully functional offline, instant shell loads.
 const CACHE = "pushpact-v2";
 const SHELL = [
