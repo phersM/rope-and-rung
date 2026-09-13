@@ -27,3 +27,6 @@ PUBLISH.md
 *.bak-*
 # local editor/tooling config
 .claude/
+
+# Cloudflare local dev state (the API itself, worker/, is committed)
+worker/.wrangler/

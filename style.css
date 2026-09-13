@@ -1015,6 +1015,8 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   background:rgba(var(--card-rgb),.28);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border-radius:var(--r-md);animation:fadeUp .3s var(--ease-out)}
 .ob-notfound-msg{font-weight:700;font-size:14.5px;color:var(--ink)}
+#boot-offline{z-index:96}
+.boot-offline-card{max-width:340px;display:flex;flex-direction:column;gap:10px;text-align:center}
 .ob-notfound-msg b{font-family:Archivo,sans-serif;letter-spacing:.03em}
 .ob-notfound-sub{font-size:13px;color:var(--muted);margin-top:4px}
 /* both notfound actions converted to captioned icon discs (owner: "these two

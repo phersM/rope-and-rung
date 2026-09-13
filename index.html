@@ -104,6 +104,17 @@
 </svg>
 
 <!-- ONBOARDING -->
+<!-- A saved crew that can't be reached right now (no signal, or the crew
+     server is down). Deliberately NOT the join screen: that would invite you to
+     fork into a new empty crew when yours is fine. See boot() in app.js. -->
+<div id="boot-offline" class="overlay hidden" role="alert">
+  <div class="ob-notfound boot-offline-card">
+    <p class="ob-notfound-msg">Can't reach your crew right now.</p>
+    <p class="ob-notfound-sub">Your sign-in is kept. Check your signal and try again.</p>
+    <button id="boot-offline-retry" class="btn btn-primary">Try again</button>
+  </div>
+</div>
+
 <div id="onboarding" class="overlay hidden">
   <!-- full-screen watermark: same animated line-figure as the header/onboarding
        badge used to show (see #rr-pushfig above), just huge + faint + sitting

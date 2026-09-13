@@ -78,9 +78,56 @@ async function boot() {
       await loadCrew(sess.crewId, sess.profileId);
       showApp();
       return;
-    } catch (e) { console.warn("session restore failed", e); session.clear(); }
+    } catch (e) {
+      console.warn("session restore failed", e);
+      // No signal is not a sign-out. Clearing the session on a network error
+      // logged you out every time you opened the app on bad reception, and the
+      // join screen then offered to fork you into a new empty crew.
+      if (state.adapter.shared && isUnreachable(e)) { showBootOffline(); return; }
+      if (state.adapter.shared && await bringSoloHistory(sess)) { showApp(); return; }
+      session.clear();
+    }
   }
   $("onboarding").classList.remove("hidden");
+}
+
+// fetch throws a TypeError when it never reached the server; a 5xx reached it
+// but it failed. Either way the crew may be perfectly fine — try again later.
+function isUnreachable(e) {
+  return e instanceof TypeError || (e?.status ?? 0) >= 500;
+}
+
+function showBootOffline() {
+  $("boot-offline").classList.remove("hidden");
+  $("boot-offline-retry").onclick = () => location.reload();
+}
+
+// A phone that banked in solo mode (LocalAdapter) while there was no crew
+// database has a session pointing at a crew that only exists in its own
+// localStorage. The onboarding promised "your pushups save on this phone, and
+// they'll come with you when crews come back" — so they do: the whole solo
+// crew is imported as a new shared crew, ids and timestamps intact, and the
+// session keeps working with the new code. The local copy is left untouched.
+async function bringSoloHistory(sess) {
+  let local;
+  try { local = JSON.parse(localStorage.getItem("pushpact-local") || "null"); } catch { return false; }
+  const crew = local?.crews?.find((c) => c.id === sess.crewId);
+  const profiles = (local?.profiles ?? []).filter((p) => p.crew_id === sess.crewId);
+  if (!crew || !profiles.some((p) => p.id === sess.profileId)) return false;
+  const pids = new Set(profiles.map((p) => p.id));
+  try {
+    const moved = await state.adapter.importCrew({
+      crew, profiles,
+      sets: (local.sets ?? []).filter((r) => pids.has(r.profile_id)),
+      statuses: (local.statuses ?? []).filter((r) => pids.has(r.profile_id)),
+    });
+    session.save({ ...sess, crewCode: moved.crew_code, crewId: moved.id });
+    await loadCrew(moved.id, sess.profileId);
+    return true;
+  } catch (e) {
+    console.warn("bringing solo history across failed", e);
+    return false;
+  }
 }
 
 async function loadCrew(crewId, profileId) {

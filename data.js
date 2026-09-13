@@ -1,6 +1,8 @@
-// Rope & Rung — data layer. Two adapters behind one interface:
-//   LocalAdapter    — localStorage only (solo mode, works before Supabase is wired)
-//   SupabaseAdapter — shared crew database (window.PUSHPACT_CONFIG = {url, anonKey} in config.js)
+// Rope & Rung — data layer. Adapters behind one interface:
+//   LocalAdapter    — localStorage only (solo mode: offline, or no backend reachable)
+//   HttpRpcAdapter  — the shared crew database: the Cloudflare API in worker/
+//                     (D1 behind Pages Functions), or serve-dev.py locally
+//   SupabaseAdapter — the previous backend, kept for a config.js that names one
 //
 // Interface: init(), findCrew(code), createCrew(defaults), resume(code,crewId),
 // listProfiles(crewId),
@@ -154,6 +156,15 @@ class RpcAdapter {
     // no code is sent: the server generates it, so a tampered client cannot
     // weaken the only credential this app has
     const data = await this._rpc("create_crew", { p_settings: defaults });
+    this.code = data.crew_code; this.crewId = data.id;
+    return data;
+  }
+  // Solo history -> a new shared crew (see import_crew in worker/src/api.js).
+  // Ids are kept, so the phone's saved session still points at the right rows;
+  // only the crew code is new.
+  async importCrew({ crew, profiles, sets, statuses }) {
+    const data = await this._rpc("import_crew",
+      { p_crew: crew, p_profiles: profiles, p_sets: sets, p_statuses: statuses });
     this.code = data.crew_code; this.crewId = data.id;
     return data;
   }
@@ -325,20 +336,33 @@ export class SupabaseAdapter extends RpcAdapter {
   }
 }
 
-// DEV ONLY. Talks to serve-dev.py's in-process backend over the same origin so
-// two devices on one LAN can share a real crew before Supabase exists. Never
-// reachable in production: it is selected only by an explicit devServer flag in
-// config.js, which is gitignored and never deployed.
-export class DevServerAdapter extends RpcAdapter {
+// The crew database. Every environment speaks the same POST /rpc/<name>
+// envelope, so one adapter serves both:
+//   - production: the Cloudflare API (worker/ — D1 behind Pages Functions),
+//     which replaced Supabase on 2026-09-14 after that project was deleted;
+//   - dev: serve-dev.py's in-process backend on the same origin (base ""),
+//     selected only by an explicit devServer flag in the gitignored config.js.
+// The API URL is not a secret — like Supabase's anon key it only names the
+// door; the crew code is what opens it, re-checked server-side on every call.
+export const CREW_API = "https://rope-and-rung-api.pages.dev";
+
+export class HttpRpcAdapter extends RpcAdapter {
+  constructor(base) { super(); this.base = base; }
   async init() {}
   async _rpc(name, args) {
-    const res = await fetch(`rpc/${name}`, {
+    const res = await fetch(`${this.base ? `${this.base}/` : ""}rpc/${name}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(args ?? {}),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.message ?? `dev server error on ${name}`);
+    if (!res.ok) {
+      // status travels with the error so callers can tell "the server said no"
+      // (4xx) from "couldn't reach it" (a TypeError from fetch, or a 5xx)
+      const err = new Error(body.message ?? `crew server error on ${name}`);
+      err.status = res.status;
+      throw err;
+    }
     return body.data;
   }
 }
@@ -347,11 +371,7 @@ export async function makeAdapter() {
   const cfg = globalThis.PUSHPACT_CONFIG;
   // dev-only, and only ever on an explicit flag — config.js is gitignored, so
   // this branch cannot exist on the deployed site
-  if (cfg?.devServer) {
-    const a = new DevServerAdapter();
-    await a.init();
-    return a;
-  }
+  if (cfg?.devServer) return new HttpRpcAdapter("");
   if (cfg?.url && cfg?.anonKey) {
     try {
       const lib = await import("https://esm.sh/@supabase/supabase-js@2");
@@ -362,5 +382,6 @@ export async function makeAdapter() {
       console.warn("Supabase unavailable, falling back to solo mode", e);
     }
   }
-  return new LocalAdapter();
+  if (cfg?.solo) return new LocalAdapter();
+  return new HttpRpcAdapter(cfg?.api ?? CREW_API);
 }
