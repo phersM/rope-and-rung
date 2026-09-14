@@ -267,12 +267,10 @@ const AVATAR_ART = {
   dynamite: '<svg viewBox="0 0 48 48"><path opacity=".45" d="M15 43 H33"/><path fill-rule="evenodd" fill="currentColor" stroke="none" d="M22 15 H26 A3 3 0 0 1 29 18 V37 A3 3 0 0 1 26 40 H22 A3 3 0 0 1 19 37 V18 A3 3 0 0 1 22 15 Z M20.5 22 H27.5 V23.6 H20.5 Z M20.5 30 H27.5 V31.6 H20.5 Z"/><path d="M24 15 Q18 11 22 9"/><g class="aa-fuseSpark"><path fill="currentColor" stroke="none" d="M26 1 L27.3 4.7 L31 6 L27.3 7.3 L26 11 L24.7 7.3 L21 6 L24.7 4.7 Z"/></g><circle cx="36" cy="13" r="1.3" fill="currentColor" stroke="none"/><path d="M33.3 10.3 L35.2 12.2"/></svg>',
   summit: '<svg viewBox="0 0 48 48"><path d="M7 43 H41" opacity=".5"/><path fill="currentColor" stroke="none" d="M9 42.5 C9 39 13.5 36.5 24 36.5 C34.5 36.5 39 39 39 42.5 Z"/><path fill="currentColor" stroke="none" d="M12.5 36 L34 35 L32.5 29.5 L14.5 30.5 Z"/><path fill="currentColor" stroke="none" d="M16 29.5 L31 28.5 L29 23.5 L17.5 24.5 Z"/><path fill="currentColor" stroke="none" d="M18.5 24 L28.5 23 L27 18 L20 18.5 Z"/><g class="aa-cairnTop"><path fill="currentColor" stroke="none" d="M20.5 17.5 L26.5 17 L25 12.5 L21.5 13 Z"/></g></svg>',
   spoonless: '<svg viewBox="0 0 48 48"><path opacity=".45" d="M14 44 H34"/><path fill-rule="evenodd" fill="currentColor" stroke="none" d="M22.7 6.5 C22.7 5.5 23.3 5 24 5 C24.7 5 25.3 5.5 25.3 6.5 L25 17.5 C28.2 18.6 29.8 21.6 29.8 25.2 C29.8 29.5 27.3 32.5 24 32.5 C20.7 32.5 18.2 29.5 18.2 25.2 C18.2 21.6 19.8 18.6 23 17.5 Z M20.6 23.8 C21.7 26.3 26.3 26.3 27.4 23.8 C26.3 25.4 21.7 25.4 20.6 23.8 Z"/><circle cx="24" cy="20" r="17"/><path d="M12 8 L36 32"/><g class="aa-motesDrift"><circle cx="16" cy="41.3" r="1.3" fill="currentColor" stroke="none"/><circle cx="32.5" cy="42" r="1.1" fill="currentColor" stroke="none"/></g></svg>',
-  // GOAT. The v2 head-only drawing, shipped so the rarest achievement in the
-  // app is not the one with no mark. STILL THE OPEN QUESTION from 2026-08-31:
-  // the owner's own note was "a goat should just be the head", but the
-  // reference links they later sent were all full-body side-on goats, which is
-  // the construction v2-house-rules refuses. Swapping this is one line if the
-  // answer turns out to be the body.
+  // GOAT. The v2 head-only drawing. Head vs full body was open from 2026-08-31
+  // (the owner's note said head; their reference links were side-on bodies,
+  // which v2-house-rules refuses). Settled 2026-09-14 — owner: "the goat head
+  // is the better, i like it". Do not swap in a body.
   goat: '<svg viewBox="0 0 48 48"><ellipse cx="10.5" cy="23.5" rx="5.6" ry="2.9" transform="rotate(22 10.5 23.5)" fill="currentColor" stroke="none"/><ellipse cx="37.5" cy="23.5" rx="5.6" ry="2.9" transform="rotate(-22 37.5 23.5)" fill="currentColor" stroke="none"/><path d="M18 11.5 C12 5 5 6.5 3 13.5"/><path d="M30 11.5 C36 5 43 6.5 45 13.5"/><path d="M13.5 22 C13.5 13.5 18 9.5 24 9.5 C30 9.5 34.5 13.5 34.5 22 L30.5 32 C30 35.5 26.5 37.5 24 37.5 C21.5 37.5 18 35.5 17.5 32 Z"/><circle cx="19" cy="21.5" r="2.1" fill="currentColor" stroke="none"/><circle cx="29" cy="21.5" r="2.1" fill="currentColor" stroke="none"/><path d="M21.8 30.5 H26.2" opacity=".55"/><g class="aa-goatBeard"><path d="M20.5 36 C19.5 40.5 21.5 42.5 24 45.5 C26.5 42.5 28.5 40.5 27.5 36"/></g></svg>',
 };
 // avatar value format: "art" or "art.colour" (per-person icon colour).
