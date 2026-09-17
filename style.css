@@ -780,9 +780,11 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .av svg .aa-hangSwing{transform-box:view-box;transform-origin:24px 9px;animation:aaHangSwing 3.2s ease-in-out infinite}
 @keyframes aaHangSwing{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
 
-/* the sloop heels; the waterline is OUTSIDE this group so the sea stays level */
-.av svg .aa-boatHeel{transform-box:view-box;transform-origin:24px 43px;animation:aaBoatHeel 4.2s ease-in-out infinite}
-@keyframes aaBoatHeel{0%,100%{transform:rotate(-5.5deg)}50%{transform:rotate(5.5deg)}}
+/* the weather moves, the mountain does not: only the cloud bank drifts, and
+   the peak above it is dead still. 2.4 units is ~2.2px at chip size, inside the
+   2-3.5px the rest of the set uses. */
+.av svg .aa-cloudBank{transform-box:view-box;animation:aaCloudBank 6.5s ease-in-out infinite}
+@keyframes aaCloudBank{0%,100%{transform:translateX(-2.4px)}50%{transform:translateX(2.4px)}}
 
 /* the bird cocks its head (owner, 2026-09-06). Pivot is the NECK, at the bottom
    of the skull, so the beak swings and the crown stays put — pivoting at the

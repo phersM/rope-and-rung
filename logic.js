@@ -357,11 +357,12 @@ export const ACHIEVEMENTS = [
     blurb: "2,500 banked." },
   { key: "ironLung",       rank:  80, name: "Iron Lung",           tier: 2, wear: "day", once: true,
     blurb: "5,000 banked." },
-  { key: "blueWater",      rank:  85, name: "Blue Water",          tier: 2, wear: "day", once: true,
-    blurb: "10,000 banked." },  // owner cut "Legend of the Rung" 2026-08-31; the
-  // display name is still open (Blue Water / Open Seas / No Horizon) and the
-  // KEY can change with it at zero cost — nothing about an unlock is stored,
-  // so there is no migration to write, just a rename.
+  { key: "aboveClouds",    rank:  85, name: "Above the Clouds",   tier: 2, wear: "day", once: true,
+    blurb: "10,000 banked." },  // owner cut "Legend of the Rung" 2026-08-31 and
+  // settled the name 2026-09-18: "Blue Water" was a SAILING term (and drew a
+  // boat on waves) in an app whose whole language is rope, rungs and a summit.
+  // Above the Clouds is climbing's own, and it tops the banked ladder: Four
+  // Figures 1,000 -> Grip Strength 2,500 -> Iron Lung 5,000 -> above the lot.
   { key: "storyteller",    rank:  45, name: "The Storyteller",     tier: 3, wear: "until-clean-week",
     blurb: "Tells all the stories but no action." },
   { key: "basecampTavern", rank:  38, name: "Basecamp Tavern",     tier: 3, wear: "day",
@@ -576,7 +577,7 @@ export function achievementUnlocks({ sets, statuses, profiles, profileId, today,
     .map((x) => ({ t: stamp(x.logged_at), id: String(x.id ?? ""), reps: Number(x.reps) || 0, raw: x }))
     .sort((a, b) => cmp(a.t, b.t) || cmp(a.id, b.id) || cmp(a.reps, b.reps));
   const TIERS = [["fullLedger", 500], ["fourFigures", 1000], ["gripStrength", 2500],
-                 ["ironLung", 5000], ["blueWater", 10000]];
+                 ["ironLung", 5000], ["aboveClouds", 10000]];
   let banked = 0;
   let tier = 0;
   for (const r of chronological) {

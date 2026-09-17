@@ -1,6 +1,6 @@
 // Rope & Rung service worker — network-first with cache fallback.
 // Fresh when online, fully functional offline, instant shell loads.
-const CACHE = "pushpact-v7";   // v7: crews live on the Cloudflare API
+const CACHE = "pushpact-v8";   // v8: Above the Clouds replaces Blue Water
                                // (v4 shipped it in navy with a gold glint, matching
                                //  neither the palette nor the launch screen)
 const SHELL = [
