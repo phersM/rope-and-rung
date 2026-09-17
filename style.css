@@ -1846,10 +1846,11 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .av svg .aa-ledgerFlutter{transform-box:view-box;transform-origin:31.5px 6px;animation:aaLedgerFlutter 1.1s ease-in-out infinite}
 @keyframes aaLedgerFlutter{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(22deg)}}
 
-/* steadfastGrip: the newest link snaps in and settles — scale is about its
-   own bounding-box centre, which the default fill-box origin already gives. */
-.aa-linkLock{animation:aaLinkLock 2.6s ease-in-out infinite}
-@keyframes aaLinkLock{0%,55%,100%{transform:scale(1)}70%{transform:scale(1.1)}}
+/* steadfastGrip: the fist tightens on the rope and holds. The rope is OUTSIDE
+   this group, so it stays put while the hand squeezes — a grip that moved the
+   rope with it would read as pulling, not holding. */
+.av svg .aa-fistClench{transform-box:view-box;transform-origin:25px 27px;animation:aaFistClench 3.4s ease-in-out infinite}
+@keyframes aaFistClench{0%,72%,100%{transform:scale(1)}84%{transform:scale(.955)}}
 
 /* keptClimbing: the top rung reaches — still going, not finished. */
 .aa-stepPulse{animation:aaStepPulse 1.3s ease-in-out infinite}

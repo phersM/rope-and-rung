@@ -235,9 +235,12 @@ const AVATAR_ART = {
   // Above the Clouds — 10,000 banked (was "Blue Water", a sloop on the sea:
   // the only nautical thing in a climbing app). One silhouette, not a scene:
   // the cloud bank crosses in FRONT of the mountain in the same fill, so the
-  // slopes below it simply stop existing and all that is left above the
-  // weather is the peak. Bank drifts; the mountain never moves.
-  aboveClouds: '<svg viewBox="0 0 48 48"><path fill="currentColor" stroke="none" d="M8 36.5 L20 9 L26.5 22 L31.5 15 L40 36.5 Z"/><g class="aa-cloudBank" fill="currentColor" stroke="none"><rect x="3" y="32.5" width="42" height="6" rx="3"/><circle cx="7.5" cy="30.8" r="4.8"/><circle cx="13.5" cy="32.4" r="4"/><circle cx="34.5" cy="32.2" r="4.2"/><circle cx="40.5" cy="31" r="4.6"/></g></svg>',
+  // weather is the peak. Two shapes with SKY BETWEEN THEM, not one silhouette:
+  // drawn touching (twice) the cloud merged into the mountain's base in the
+  // same fill and the whole thing read as a mountain on a plinth — "there is no
+  // cloud in the icon" (owner, 2026-09-18). The gap is the mark. Bank drifts;
+  // the mountain never moves.
+  aboveClouds: '<svg viewBox="0 0 48 48"><path fill="currentColor" stroke="none" d="M10 26 L20.5 6 L26 17 L30 11.5 L38 26 Z"/><g class="aa-cloudBank" fill="currentColor" stroke="none"><rect x="4" y="33" width="40" height="7.5" rx="3.75"/><circle cx="11" cy="33.5" r="5.6"/><circle cx="20" cy="32" r="6.2"/><circle cx="29.5" cy="33" r="5.6"/><circle cx="37.5" cy="34" r="4.6"/></g></svg>',
   basecampTavern: '<svg viewBox="0 0 48 48"><path fill-rule="evenodd" fill="currentColor" stroke="none" d="M14.5 8 H33.5 C36.5 8 38.5 15 38.5 24 C38.5 33 36.5 40 33.5 40 H14.5 C11.5 40 9.5 33 9.5 24 C9.5 15 11.5 8 14.5 8 Z M10.6 15.5 L37.4 15.5 L37.4 17.6 L10.6 17.6 Z M9.8 22.9 L38.2 22.9 L38.2 25 L9.8 25 Z M10.6 30.3 L37.4 30.3 L37.4 32.4 L10.6 32.4 Z"/><path d="M38.5 24 H44 V27" /><g class="aa-kegDrip"><circle cx="44" cy="30" r="2.1" fill="currentColor" stroke="none"/></g><g class="aa-kegDripB"><circle cx="44" cy="30" r="1.7" fill="currentColor" stroke="none"/></g></svg>',
   // Eagle Soaring. Fourteen rounds; the failures are worth keeping because they
   // were all the same failure. A tall rounded body standing upright IS a penguin —
@@ -262,7 +265,14 @@ const AVATAR_ART = {
   whiteKnuckle: '<svg viewBox="0 0 48 48"><rect x="14" y="6" width="20" height="4" rx="2" fill="currentColor" stroke="none"/><rect x="14" y="38" width="20" height="4" rx="2" fill="currentColor" stroke="none"/><path d="M16 10 Q16 20 24 24 Q16 28 16 38 M32 10 Q32 20 24 24 Q32 28 32 38" opacity=".5"/><path d="M18 36 Q18 28 24 26 Q30 28 30 36 Z" fill="currentColor" stroke="none"/><path d="M21.5 20 L26.5 20 L24 23 Z" fill="currentColor" stroke="none"/><g class="aa-grainDrop"><circle cx="24" cy="25" r="1.6" fill="currentColor" stroke="none"/></g></svg>',
   firstRung: '<svg viewBox="0 0 48 48"><path d="M15 2 V38 M33 2 V38" opacity=".45"/><g class="aa-rungSet"><rect x="13" y="27.5" width="22" height="5" rx="2.5" fill="currentColor" stroke="none"/></g><path d="M10 42 H38" opacity=".5"/><circle cx="15" cy="38" r="2.2" fill="currentColor" stroke="none"/><circle cx="33" cy="38" r="2.2" fill="currentColor" stroke="none"/></svg>',
   fullLedger: '<svg viewBox="0 0 48 48"><rect x="11" y="6" width="26" height="36" rx="2"/><path d="M14 6 V42" opacity=".5"/><path d="M18 33 V22 M22 33 V22 M26 33 V22 M30 33 V22"/><path d="M16 32 L32 21"/><g class="aa-ledgerFlutter"><path d="M29 6 L34 6 L34 15 L31.5 12.3 L29 15 Z" fill="currentColor" stroke="none"/></g></svg>',
-  steadfastGrip: '<svg viewBox="0 0 48 48"><rect x="6" y="14" width="22" height="11" rx="5.5" transform="rotate(-38 17 19.5)"/><g class="aa-linkLock"><rect x="20" y="23" width="22" height="11" rx="5.5" transform="rotate(-38 31 28.5)"/></g></svg>',
+  // Steadfast Grip — a whole week met, no rest day taken. Was two chain links,
+  // which "does not convey fitness or grip in any way" (owner, 2026-09-18) and
+  // the house rules had already called generic. A fist closed on the rope is
+  // this app's own words for holding on all week: knuckles over a solid hand,
+  // thumb wrapped across, the rope running past above and below so it reads as
+  // a grip rather than a punch. Distinct from Grip Strength, which is the whole
+  // body hanging off a bar.
+  steadfastGrip: '<svg viewBox="0 0 48 48"><rect x="19" y="1" width="10" height="46" rx="5" fill="currentColor" stroke="none" opacity=".4"/><g class="aa-fistClench" fill="currentColor" stroke="none"><circle cx="15" cy="18" r="3.8"/><circle cx="22" cy="16.6" r="4"/><circle cx="29" cy="16.8" r="3.9"/><circle cx="35" cy="18.6" r="3.4"/><rect x="11" y="17.5" width="28" height="20" rx="5.5"/><ellipse cx="11.5" cy="31" rx="6.6" ry="4.4" transform="rotate(-30 11.5 31)"/></g></svg>',
   keptClimbing: '<svg viewBox="0 0 48 48"><path d="M10 42 L16 6"/><path d="M38 42 L32 6"/><path d="M11.3 34 H36.7"/><path d="M12.7 26 H35.3"/><path d="M14 18 H34"/><g class="aa-stepPulse"><path d="M15.3 10 H32.7"/></g></svg>',
   firstPin: '<svg viewBox="0 0 48 48"><circle cx="24" cy="9" r="2.8" fill="currentColor" stroke="none"/><g class="aa-noteSwing"><g transform="rotate(-6 24 25)"><path d="M12 14 Q12 12 14 12 H30 L36 18 V37 Q36 39 34 39 H14 Q12 39 12 37 Z"/><path d="M30 12.5 L34.5 17"/><path d="M16 20 H30"/><path d="M16 26 H24"/><path d="M16 32 H31"/><path d="M13 38 Q10 41.5 14 42.5" opacity=".5"/></g></g></svg>',
   storyteller: '<svg viewBox="0 0 48 48"><path d="M8 14 Q8 6 16 6 H26" opacity=".5"/><path d="M10 45 H34" opacity=".45"/><g class="aa-bubbleNod"><path fill-rule="evenodd" fill="currentColor" stroke="none" d="M14 8 H34 Q38 8 38 12 V26 Q38 30 34 30 H20 L15 39 L17 30 H14 Q10 30 10 26 V12 Q10 8 14 8 Z M13.3 19 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z M17.8 19 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z M22.3 19 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z M26.8 19 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z M31.3 19 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z"/><circle cx="11" cy="44" r="1.3" fill="currentColor" stroke="none" opacity=".4"/><path d="M36 5 L39 2" opacity=".5"/><path d="M40 8 L44 6" opacity=".5"/></g></svg>',
