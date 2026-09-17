@@ -267,6 +267,11 @@
   <div class="ih-body">
     <b>Make it a phone app</b>
     <span id="ih-steps">Tap <span class="ih-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> Share, then <b>Add to Home Screen</b>. Full screen, own icon, no browser.</span>
+    <!-- An iPhone home-screen app gets its OWN storage, separate from Safari:
+         the crew you just joined in the browser is not signed in over there,
+         and the invite link that would fix that opens Safari again. So the code
+         travels with the instructions. Filled in by setInstallHintCode(). -->
+    <span id="ih-code" class="ih-code hidden"></span>
   </div>
   <button id="ih-close" aria-label="Dismiss">✕</button>
 </div>
@@ -394,6 +399,11 @@
     <div class="crew-invite">
       <div class="l-title rope-title" id="crew-invite-title">Invite a friend</div>
       <p id="crew-invite-body">Send them the app link and the crew code. They open it, enter the code, make a profile — in.</p>
+      <!-- The code is ON the card, not only in Settings: half of inviting
+           somebody happens out loud ("what's the code?") or over a call, and
+           sending them digging through Settings to answer is a silly errand.
+           Tap to copy. -->
+      <button id="crew-invite-code" class="crew-code-chip" aria-label="Copy the crew code"><span id="crew-invite-code-text"></span><span class="ccc-hint">tap to copy</span></button>
       <button id="share-btn" class="btn btn-ghost">Share invite</button>
     </div>
   </main>

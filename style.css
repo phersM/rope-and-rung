@@ -1017,6 +1017,16 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   background:rgba(var(--card-rgb),.28);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border-radius:var(--r-md);animation:fadeUp .3s var(--ease-out)}
 .ob-notfound-msg{font-weight:700;font-size:14.5px;color:var(--ink)}
+/* the crew code, on the invite card and in the install hint: monospace and
+   letter-spaced because its whole job is being read off a screen and typed
+   into another phone, often by someone reading it aloud. */
+.crew-code-chip{display:inline-flex;align-items:baseline;gap:10px;margin:2px 0 12px;padding:9px 14px;
+  border-radius:12px;border:1.5px dashed var(--hair);background:transparent;cursor:pointer;
+  font-family:"JetBrains Mono",monospace;font-size:19px;letter-spacing:.18em;color:var(--ink)}
+.crew-code-chip .ccc-hint{font-family:"Instrument Sans",sans-serif;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted)}
+.ih-code{display:block;margin-top:6px;font-family:"JetBrains Mono",monospace;font-size:11.5px;
+  letter-spacing:.06em;color:var(--ink)}
 #boot-offline{z-index:96}
 .boot-offline-card{max-width:340px;display:flex;flex-direction:column;gap:10px;text-align:center}
 .ob-notfound-msg b{font-family:Archivo,sans-serif;letter-spacing:.03em}

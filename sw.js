@@ -1,6 +1,6 @@
 // Rope & Rung service worker — network-first with cache fallback.
 // Fresh when online, fully functional offline, instant shell loads.
-const CACHE = "pushpact-v9";   // v9: cloud reads at chip size; the grip is a fist
+const CACHE = "pushpact-v10";  // v10: the invite flow a real member walks
                                // (v4 shipped it in navy with a gold glint, matching
                                //  neither the palette nor the launch screen)
 const SHELL = [

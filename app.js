@@ -728,6 +728,9 @@ function applyMode(code) {
   // sharing an invite that nobody can act on is the same failure from the
   // other end — don't offer it until there's a database behind the code.
   $("share-btn").classList.toggle("hidden", !shared);
+  // a code nobody can act on is worse than no code at all — same reasoning as
+  // the share button above
+  $("crew-invite-code").classList.toggle("hidden", !shared);
   if (!shared) {
     $("crew-invite-title").textContent = "Crews are offline";
     $("crew-invite-body").textContent =
@@ -792,6 +795,34 @@ $("ob-no-code").addEventListener("click", async () => {
 // two deliberate, equally-weighted paths: fix the typo (input stays focused/
 // editable) or explicitly start a new crew under that code. Enter never
 // relabels itself into a create action.
+// What people actually paste is the whole invite — "…/rope-and-rung/?code=ABCD2345"
+// or the entire message it arrived in. The field is maxlength=8, so a paste
+// like that used to be truncated to "HTTPS://" before anything could read it:
+// the friend then saw "crew codes are given out, not made up" while holding a
+// perfectly good invite. Pull the code out of whatever landed.
+function codeFromPaste(raw) {
+  const text = String(raw || "").trim();
+  const inLink = text.match(/[?&]code=([^&\s]+)/i);
+  if (inLink) {
+    const c = decodeURIComponent(inLink[1]).toUpperCase();
+    if (looksLikeCode(c)) return c;
+  }
+  // a code read off a screenshot often arrives spaced or hyphenated
+  const bare = text.toUpperCase().replace(/[\s-]/g, "");
+  if (looksLikeCode(bare)) return bare;
+  return null;
+}
+
+$("crew-code").addEventListener("paste", (e) => {
+  const pasted = e.clipboardData?.getData("text");
+  const code = codeFromPaste(pasted);
+  if (!code) return;                 // nothing we recognise — let the browser paste it
+  e.preventDefault();
+  $("crew-code").value = code;
+  hideCodeNotFound();
+  obErr("");
+});
+
 $("ob-code-btn").addEventListener("click", async () => {
   const code = $("crew-code").value.trim().toUpperCase();
   if (code.length !== CODE_LENGTH) return obErr(`A crew code is exactly ${CODE_LENGTH} characters. Entering someone's? Check you've got all of it. No code of your own? Start a crew below.`);
@@ -1363,16 +1394,70 @@ function renderCrew() {
   // as solo. Adapted from the retired Home-screen line — "from the Crew tab"
   // is dropped because this IS the crew tab now, and the invite card it points
   // at is the next block down.
+  if (state.crew && state.adapter.shared) {
+    $("crew-invite-code-text").textContent = state.crew.crew_code;
+    setInstallHintCode(state.crew.crew_code);
+  }
   $("crew-cards").innerHTML = cards ||
     '<div class="l-empty">Flying solo for now — that counts too. Invite a friend below.</div>';
 }
 
+function inviteLink() {
+  return `${location.origin}${location.pathname}?code=${encodeURIComponent(state.crew.crew_code)}`;
+}
+
+// `url` as its own field, not a link buried in `text`. Messages, WhatsApp and
+// Mail all build a tappable preview from `url` and most of them will not hunt
+// for a link inside a sentence — the old single-string version arrived as grey
+// text you had to copy out by hand.
 $("share-btn").addEventListener("click", async () => {
-  const link = `${location.origin}${location.pathname}?code=${encodeURIComponent(state.crew.crew_code)}`;
-  const msg = `Rope & Rung — daily pushups, no hiding. Open ${link} (crew code ${state.crew.crew_code} is pre-filled)`;
-  if (navigator.share) { try { await navigator.share({ text: msg }); } catch {} }
-  else { await navigator.clipboard.writeText(msg); $("share-btn").textContent = "Copied!"; setTimeout(() => $("share-btn").textContent = "Share invite", 1500); }
+  const link = inviteLink();
+  const payload = {
+    title: "Rope & Rung",
+    text: `Daily pushups, no hiding. Crew code ${state.crew.crew_code} — the link fills it in for you.`,
+    url: link,
+  };
+  if (navigator.share) {
+    try { await navigator.share(payload); return; } catch (e) { if (e?.name === "AbortError") return; }
+  }
+  await copyToClipboard(`${payload.text} ${link}`);
+  flash($("share-btn"), "Copied!", "Share invite");
 });
+
+// The code on its own, for saying out loud or pasting into a group chat.
+$("crew-invite-code").addEventListener("click", async () => {
+  if (!state.crew) return;
+  await copyToClipboard(state.crew.crew_code);
+  const chip = $("crew-invite-code-text");
+  flash(chip, "Copied!", state.crew.crew_code);
+});
+
+function flash(el, msg, back) {
+  const was = el.textContent;
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = back ?? was; }, 1500);
+}
+
+// navigator.clipboard is undefined outside a secure context — which is exactly
+// how a phone on the LAN reaches the dev server — and it rejects when the page
+// is not focused. Fall back to the old execCommand path so "Copied!" is never
+// a lie.
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(text); return true; }
+  } catch {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch { return false; }
+}
 
 // ---------- history ----------
 
@@ -2153,6 +2238,16 @@ function esc(s) {
 // ---------- phone-app install (PWA) ----------
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+// iOS gives a home-screen web app its own storage, so a member who joined in
+// Safari arrives at the installed app signed out — and the invite link that
+// would fix it opens Safari, not the app. One line with the code closes that.
+function setInstallHintCode(code) {
+  const el = $("ih-code");
+  if (!el || !code) return;
+  el.textContent = `Your crew code is ${code} — enter it once when the app opens.`;
+  el.classList.remove("hidden");
+}
 
 (function installHint() {
   const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
