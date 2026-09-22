@@ -5,8 +5,9 @@
 
 | file | what it is |
 |---|---|
-| `design/pushup-form/master-v1-20260922.png` | the generator's original, 1672x941, untouched |
-| `assets/pushup-form.jpg` | what the app loads — 1600x900, q82, 319KB |
+| `design/pushup-form/master-v2-20260922.png` | **the one in use** — 1402x1122, untouched |
+| `design/pushup-form/master-v1-20260922.png` | the first pass, 1672x941, kept for the record |
+| `assets/pushup-form.jpg` | what the app loads — v2 at 1200x960, q74, 313KB |
 
 Generated 2026-09-22 by the owner in ChatGPT's image generator from the v1 prompt below.
 Not photographed, not traced from a licensed source, so there is nothing to clear.
@@ -62,3 +63,27 @@ at any size, works offline, and the form in it is exactly what the rules say.
 
 The still storyboard and the animation do different jobs and both earn their place: the
 drawing shows what a body looks like in each position, the animation shows the movement.
+
+---
+
+## v2 (2026-09-22) — in use
+
+Run from `prompt-v2.txt`. It fixed everything v1 was pulled up on:
+
+- thick chalk, and the panels fill the board — no dead space top and bottom
+- **panel 2 finally does its job**: front on, fingers splayed, two arrows curling outward at
+  the hands to show the screw into the floor, elbow creases facing forward. This is the owner's
+  "shoulders turned out at the elbow — gives a better pushup foundation", and it is the entire
+  reason that panel exists
+- panel 4 is the bottom of a rep rather than a rest on the floor, with a chalk fist under the
+  chest as a depth gauge and the dashed guide line repeated along the body
+- **2x2 at 5:4 instead of a 16:9 strip**, which is what a phone wants
+
+That last change deleted code. The v1 strip had to be rotated 90 degrees in portrait to be any
+use; a near-square board does not want rotating, it wants filling and panning. The viewer now
+has two states and a phone opens in the useful one — filled to the screen's height, panned
+sideways from centre — with a tap back to the whole board.
+
+Two things still wrong with v2, left alone deliberately: the figures carry faint chest contours
+that read as shading (the brief said outline only), and the reading order of a 2x2 grid is only
+obvious because the four rules beside it are in the same order.
