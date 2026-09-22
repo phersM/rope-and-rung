@@ -1388,6 +1388,52 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 @keyframes celFlick{0%,100%{opacity:.85;transform:scale(1)}41%{opacity:1;transform:scale(1.12)}78%{opacity:.6;transform:scale(.93)}}
 @keyframes celFlick2{0%,100%{opacity:.95;transform:scale(1)}24%{opacity:1;transform:scale(1.1)}71%{opacity:.7;transform:scale(.9)}}
 
+/* ---- "what counts as one": the rep, drawn and solved ----
+   The figure is three nested groups — body about the toes, upper arm about the
+   shoulder, forearm about the elbow — and the keyframes below are the solved
+   inverse kinematics at fourteen stops, not hand-tuned angles. That is what
+   keeps the hand nailed to the floor through the whole cycle; every eyeballed
+   version of this slides the hand around, which is the tell. Body swings 28.7
+   to 10 degrees, elbow closes to 50: chest at fist height, a real rep depth.
+   Under prefers-reduced-motion the blanket rule at the top of this file stops
+   the cycle at its last keyframe, which is the locked-out top pose — a correct
+   still, so nothing extra is needed here. */
+#form-sheet{z-index:92;align-items:flex-start;justify-content:center;overflow-y:auto;padding:0}
+.form-sheet-inner{width:100%;max-width:560px;padding:22px 20px 40px;display:flex;flex-direction:column;gap:16px}
+.form-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.form-close,.form-zoom-close{width:38px;height:38px;flex:none;border-radius:50%;border:1.5px solid var(--hair);
+  background:transparent;color:var(--ink);font-size:15px;cursor:pointer}
+.form-board{border-radius:16px;background:var(--studio-bg,#0B3B34);padding:14px 10px;overflow:hidden}
+@media (prefers-color-scheme: light){.form-board{background:#0B3B34}}
+.pf-fig{display:block;width:100%;height:auto}
+.pf-fig .pf-line,.pf-fig .pf-ground{fill:none;stroke:#FAF3E8;stroke-width:5.6;stroke-linecap:round;stroke-linejoin:round}
+.pf-fig .pf-ground{stroke-width:3;opacity:.5}
+.pf-fig .pf-head{fill:none;stroke:#FAF3E8;stroke-width:5.6}
+.pf-fig .pf-far{opacity:.42}
+.pf-body{transform-box:view-box;transform-origin:28px 108px;animation:pfBody 3.4s linear infinite}
+.pf-upper{transform-box:view-box;transform-origin:159.6px 36px;animation:pfUpper 3.4s linear infinite}
+.pf-fore{transform-box:view-box;transform-origin:159.6px 72px;animation:pfFore 3.4s linear infinite}
+.form-rules{list-style:none;display:flex;flex-direction:column;gap:12px;margin:2px 0 0}
+.form-rules li{position:relative;padding-left:26px;font-size:14.5px;line-height:1.5;color:var(--ink)}
+.form-rules li::before{content:"";position:absolute;left:6px;top:8px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.form-rules b{font-weight:700}
+.form-note{font-size:13px;color:var(--muted);line-height:1.5}
+.form-photo{display:block;width:100%;padding:0;border:0;background:transparent;border-radius:14px;overflow:hidden;cursor:pointer;position:relative}
+.form-photo img{display:block;width:100%;height:auto;border-radius:14px}
+.form-photo-hint{position:absolute;right:10px;bottom:10px;padding:5px 10px;border-radius:999px;
+  background:rgba(8,31,27,.72);color:#FAF3E8;font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
+#form-zoom{position:fixed;inset:0;z-index:97;background:#081F1B;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#form-zoom img{max-width:100%;max-height:100%;object-fit:contain}
+/* portrait: turn the strip so it uses the long side of the screen */
+@media (orientation:portrait){
+  #form-zoom img{max-width:none;max-height:none;width:100dvh;height:auto;transform:rotate(90deg)}
+}
+.form-zoom-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;color:#FAF3E8;border-color:rgba(250,243,232,.4)}
+.form-link{background:none;border:0;padding:8px 2px 2px;margin:4px 0 0;display:block;cursor:pointer;
+  flex:0 0 100%;width:100%;text-align:center;
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+
 /* council polish round (Expansionist QoL, 2026-07-20) */
 /* dial: volt discharge each full revolution */
 .dial.discharge .ring{animation:voltflash .55s ease-out}
@@ -1924,4 +1970,54 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 @media (prefers-reduced-motion: reduce){
   #celebrate-overlay.reduced{animation:celebrateFade .28s ease-out !important}
   @keyframes celebrateFade{from{opacity:0}to{opacity:1}}
+}
+
+/* solved pushup cycle — see the note above .pf-fig */
+@keyframes pfBody{
+  0%{transform:rotate(-0.00deg)}
+  7.692%{transform:rotate(1.66deg)}
+  15.38%{transform:rotate(6.04deg)}
+  23.08%{transform:rotate(11.59deg)}
+  30.77%{transform:rotate(16.35deg)}
+  38.46%{transform:rotate(18.64deg)}
+  46.15%{transform:rotate(18.70deg)}
+  53.85%{transform:rotate(17.90deg)}
+  61.54%{transform:rotate(14.66deg)}
+  69.23%{transform:rotate(9.87deg)}
+  76.92%{transform:rotate(4.92deg)}
+  84.62%{transform:rotate(1.27deg)}
+  92.31%{transform:rotate(-0.00deg)}
+  100%{transform:rotate(-0.00deg)}
+}
+@keyframes pfUpper{
+  0%{transform:rotate(0.00deg)}
+  7.692%{transform:rotate(20.40deg)}
+  15.38%{transform:rotate(42.86deg)}
+  23.08%{transform:rotate(65.62deg)}
+  30.77%{transform:rotate(85.60deg)}
+  38.46%{transform:rotate(96.34deg)}
+  46.15%{transform:rotate(96.68deg)}
+  53.85%{transform:rotate(92.76deg)}
+  61.54%{transform:rotate(78.26deg)}
+  69.23%{transform:rotate(58.69deg)}
+  76.92%{transform:rotate(37.87deg)}
+  84.62%{transform:rotate(17.66deg)}
+  92.31%{transform:rotate(0.00deg)}
+  100%{transform:rotate(0.00deg)}
+}
+@keyframes pfFore{
+  0%{transform:rotate(0.00deg)}
+  7.692%{transform:rotate(-17.00deg)}
+  15.38%{transform:rotate(-29.36deg)}
+  23.08%{transform:rotate(-35.70deg)}
+  30.77%{transform:rotate(-35.58deg)}
+  38.46%{transform:rotate(-33.12deg)}
+  46.15%{transform:rotate(-33.02deg)}
+  53.85%{transform:rotate(-34.13deg)}
+  61.54%{transform:rotate(-36.29deg)}
+  69.23%{transform:rotate(-34.46deg)}
+  76.92%{transform:rotate(-27.12deg)}
+  84.62%{transform:rotate(-15.07deg)}
+  92.31%{transform:rotate(0.00deg)}
+  100%{transform:rotate(0.00deg)}
 }

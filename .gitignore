@@ -9,6 +9,10 @@ council/
 # one machine only; a clean checkout could not have produced it.
 design/*
 !design/celebration/
+# the pushup-form asset: the master the owner generated, plus the prompts that
+# made it. The app ships assets/pushup-form.jpg, which is derived from it — a
+# clean checkout must be able to regenerate or re-crop that.
+!design/pushup-form/
 design/celebration/*.ckpt-*
 supabase/
 DESIGN.md

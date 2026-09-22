@@ -706,6 +706,36 @@ function maybeCelebrate(beforeTally, repsAdded) {
   }
 }
 
+// ---------- what counts as one ----------
+// A crew on the honour system needs ONE definition of a rep, or two people are
+// counting different things and the ranking is fiction. Reference material, so
+// it sits quietly under the log actions and opens over the top.
+const formSheet = () => $("form-sheet");
+function openFormSheet() {
+  formSheet().classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeFormSheet() {
+  formSheet().classList.add("hidden");
+  document.body.style.overflow = "";
+}
+$("form-link").addEventListener("click", openFormSheet);
+$("form-close").addEventListener("click", closeFormSheet);
+
+// The storyboard is a wide strip on a tall phone, so "full screen" means
+// turning it: the CSS rotates it in portrait. Tap anywhere to come back.
+function openFormZoom() { $("form-zoom").classList.remove("hidden"); }
+function closeFormZoom() { $("form-zoom").classList.add("hidden"); }
+$("form-photo").addEventListener("click", openFormZoom);
+$("form-zoom").addEventListener("click", closeFormZoom);
+
+// Escape closes the top layer first — the zoom, then the sheet.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!$("form-zoom").classList.contains("hidden")) return closeFormZoom();
+  if (!formSheet().classList.contains("hidden")) closeFormSheet();
+});
+
 // ---------- onboarding ----------
 
 let obCrew = null, obAvatar = "pumper", obColor = "teal";

@@ -369,6 +369,8 @@
     <div class="today-actions">
       <button id="rest-btn" class="btn btn-ghost"></button>
       <button id="excuse-btn" class="btn btn-ghost hidden">Write an excuse</button>
+      <!-- quiet, under the actions: it is a reference, not a thing to do -->
+      <button id="form-link" class="form-link">What counts as one</button>
     </div>
   </main>
 
@@ -611,6 +613,77 @@
     <div id="unlock-list" class="unlock-list"></div>
     <button id="unlock-dismiss" class="btn btn-primary">Got it</button>
   </div>
+</div>
+
+<!-- "What counts as one" — the shared definition of a rep. The app is an honour
+     system: without one definition, two people are counting different things.
+     The figure is drawn and animated here rather than filmed: a pushup is a
+     rigid body pivoting on the toes while the arm folds, so the pose is solved
+     (see the pf* keyframes in style.css) and the hand never slides off the
+     floor. The chalk storyboard is the owner's own generated asset. -->
+<div id="form-sheet" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="form-sheet-title">
+  <div class="form-sheet-inner">
+    <div class="form-head">
+      <div class="l-title rope-title" id="form-sheet-title">What counts as one</div>
+      <button id="form-close" class="form-close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="form-board">
+      <svg class="pf-fig" viewBox="0 0 240 130" role="img" aria-label="A pushup, from the side: the body stays in one straight line while the arms bend and straighten">
+        <defs>
+          <filter id="pfChalk" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="7" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.7" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+        </defs>
+        <g filter="url(#pfChalk)">
+          <line class="pf-ground" x1="6" y1="108" x2="234" y2="108"/>
+          <g class="pf-body">
+            <!-- the far arm sits behind the body, offset and dimmed: one arm
+                 alone reads as a diagram, two read as a person -->
+            <g class="pf-far" transform="translate(-10,7)">
+              <g class="pf-upper">
+                <line class="pf-line" x1="159.6" y1="36" x2="159.6" y2="72"/>
+                <g class="pf-fore">
+                  <line class="pf-line" x1="159.6" y1="72" x2="159.6" y2="108"/>
+                  <path class="pf-line" d="M153 108 H167"/>
+                </g>
+              </g>
+            </g>
+            <path class="pf-line" d="M21 90 L28 108 M28 108 L91.2 73.4 L159.6 36"/>
+            <line class="pf-line" x1="159.6" y1="36" x2="171" y2="29.5"/>
+            <circle class="pf-head" cx="178.9" cy="25.4" r="9.5"/>
+            <g class="pf-upper">
+              <line class="pf-line" x1="159.6" y1="36" x2="159.6" y2="72"/>
+              <g class="pf-fore">
+                <line class="pf-line" x1="159.6" y1="72" x2="159.6" y2="108"/>
+                <path class="pf-line" d="M152 108 H168"/>
+              </g>
+            </g>
+        </g>
+      </svg>
+    </div>
+
+    <ol class="form-rules">
+      <li><b>Chest to fist height.</b> Put a fist on the floor under your chest — touch it, then press. Half a rep is not a rep.</li>
+      <li><b>Arms locked at the top.</b> Every rep starts and finishes straight.</li>
+      <li><b>One line, heels to head.</b> Hips neither sagging nor hitched up. If the line breaks, the set is over.</li>
+      <li><b>Hands under your shoulders, elbows back.</b> Screw your hands outward into the floor so the creases of your elbows face forward and your elbows track back at about 45°, not flared out sideways. That turned-out shoulder is the foundation — it is what lets you press hard without the shoulder complaining.</li>
+    </ol>
+    <p class="form-note">No bouncing off the floor, and no counting the ones you didn't feel.</p>
+
+    <button id="form-photo" class="form-photo" aria-label="Open the full storyboard">
+      <img src="assets/pushup-form.jpg" alt="Four chalk panels: the start, the shoulders, lowering, and the bottom of a pushup" loading="lazy" decoding="async">
+      <span class="form-photo-hint">Tap to fill the screen</span>
+    </button>
+  </div>
+</div>
+
+<!-- The storyboard is a wide strip and a phone is tall, so filling the screen
+     means turning it: in portrait the image is rotated to use the long side. -->
+<div id="form-zoom" class="hidden" role="dialog" aria-modal="true" aria-label="Pushup storyboard, full screen">
+  <img src="assets/pushup-form.jpg" alt="Four chalk panels: the start, the shoulders, lowering, and the bottom of a pushup">
+  <button id="form-zoom-close" class="form-zoom-close" aria-label="Close">✕</button>
 </div>
 
 <div id="celebrate-overlay" class="overlay hidden" role="status" aria-live="polite">
