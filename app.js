@@ -706,7 +706,7 @@ function maybeCelebrate(beforeTally, repsAdded) {
   }
 }
 
-// ---------- what counts as one ----------
+// ---------- how we do them ----------
 // A crew on the honour system needs ONE definition of a rep, or two people are
 // counting different things and the ranking is fiction. Reference material, so
 // it sits quietly under the log actions and opens over the top.

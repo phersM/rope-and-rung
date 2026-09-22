@@ -1,7 +1,7 @@
 # Pushup form storyboard — asset record
 
 **What this is.** A four-panel chalk storyboard of one pushup, shown in the app behind
-"What counts as one" so a crew running on the honour system shares one definition of a rep.
+"How we do them" so a crew running on the honour system shares one definition of a rep.
 
 | file | what it is |
 |---|---|
@@ -54,7 +54,7 @@ would read better still. `prompt-v2.txt` carries that variant at the bottom.
 
 ## Where it is used
 
-`#form-sheet` in `index.html` — "What counts as one", opened from the link under the log
+`#form-sheet` in `index.html` — "How we do them", opened from the card under the log
 actions. The link carries a small thumbnail of this board, so it reads as something to look at
 rather than a line of text.
 

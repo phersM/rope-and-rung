@@ -471,7 +471,7 @@ input, textarea{-webkit-user-select:text; user-select:text}
 #mate-postit-zone{display:flex;justify-content:flex-end;margin-top:10px}
 #mate-postit-zone .postit{transform:rotate(3deg)}
 
-/* wrap, so the "what counts as one" link drops onto its own line under the
+/* wrap, so the "how we do them" card drops onto its own line under the
    two action buttons instead of being squeezed in beside them */
 .today-actions{display:flex;flex-wrap:wrap;gap:10px;padding:16px 22px 12px;margin-top:auto}
 .today-actions .btn{flex:1 1 0}
@@ -1390,7 +1390,7 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 @keyframes celFlick{0%,100%{opacity:.85;transform:scale(1)}41%{opacity:1;transform:scale(1.12)}78%{opacity:.6;transform:scale(.93)}}
 @keyframes celFlick2{0%,100%{opacity:.95;transform:scale(1)}24%{opacity:1;transform:scale(1.1)}71%{opacity:.7;transform:scale(.9)}}
 
-/* ---- "what counts as one" ----
+/* ---- "how we do them" ----
    The shared definition of a rep. A crew on the honour system needs one, or two
    people are counting different things. A drawn, animated side view of the rep
    lived here and was cut on 2026-09-22 (owner: "forget the animation, it's not
