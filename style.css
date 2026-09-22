@@ -1429,12 +1429,21 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
    any use — that rule is gone with it, because rotating a near-square image
    makes it SMALLER, not bigger. */
 .form-zoom-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;color:#FAF3E8;border-color:rgba(250,243,232,.4)}
-.form-link{display:flex;align-items:center;justify-content:center;gap:10px;flex:0 0 100%;width:100%;
-  background:none;border:0;padding:10px 2px 2px;margin:2px 0 0;cursor:pointer}
-.form-link img{width:46px;height:36px;object-fit:cover;border-radius:7px;opacity:.9;
-  border:1px solid var(--hair);flex:none}
-.form-link span{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+/* The way in. A 46px crop of the board said nothing — at that size it was a
+   grey smudge. This is a row: the whole board at its own aspect (104x84 is
+   1.24:1 against the image's 1.25, so nothing is cropped away), the title, and
+   a line saying what is inside. Card treatment, --r-lg, hairline, like every
+   other card in the app. */
+.form-card{display:flex;align-items:center;gap:13px;width:100%;flex:0 0 100%;margin:2px 0 0;
+  padding:10px;text-align:left;cursor:pointer;
+  background:var(--card);border:1px solid var(--hair);border-radius:var(--r-lg)}
+.form-card img{width:104px;height:84px;flex:none;object-fit:cover;border-radius:var(--r-md);
+  border:1px solid var(--hair)}
+.form-card-text{display:flex;flex-direction:column;gap:4px;min-width:0}
+.form-card-title{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink)}
+.form-card-sub{font-size:12.5px;line-height:1.4;color:var(--muted)}
+.form-card-chev{margin-left:auto;padding:0 4px;font-size:20px;line-height:1;color:var(--muted);opacity:.7}
 
 /* council polish round (Expansionist QoL, 2026-07-20) */
 /* dial: volt discharge each full revolution */
