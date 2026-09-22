@@ -673,16 +673,16 @@
     <p class="form-note">No bouncing off the floor, and no counting the ones you didn't feel.</p>
 
     <button id="form-photo" class="form-photo" aria-label="Open the full storyboard">
-      <img src="assets/pushup-form.jpg" alt="Four chalk panels: the start, the shoulders, lowering, and the bottom of a pushup" loading="lazy" decoding="async">
+      <img src="assets/pushup-form.jpg" alt="Four chalk panels: the start, the hands and shoulders from the front, lowering, and the bottom of a pushup" loading="lazy" decoding="async">
       <span class="form-photo-hint">Tap to fill the screen</span>
     </button>
   </div>
 </div>
 
-<!-- The storyboard is a wide strip and a phone is tall, so filling the screen
-     means turning it: in portrait the image is rotated to use the long side. -->
+<!-- Opens the storyboard at full screen. Tap anywhere to come back. -->
 <div id="form-zoom" class="hidden" role="dialog" aria-modal="true" aria-label="Pushup storyboard, full screen">
-  <img src="assets/pushup-form.jpg" alt="Four chalk panels: the start, the shoulders, lowering, and the bottom of a pushup">
+  <img src="assets/pushup-form.jpg" alt="Four chalk panels: the start, the hands and shoulders from the front, lowering, and the bottom of a pushup">
+  <span id="form-zoom-hint" class="form-zoom-hint"></span>
   <button id="form-zoom-close" class="form-zoom-close" aria-label="Close">✕</button>
 </div>
 

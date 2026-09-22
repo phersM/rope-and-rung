@@ -724,10 +724,30 @@ $("form-close").addEventListener("click", closeFormSheet);
 
 // The storyboard is a wide strip on a tall phone, so "full screen" means
 // turning it: the CSS rotates it in portrait. Tap anywhere to come back.
-function openFormZoom() { $("form-zoom").classList.remove("hidden"); }
+function openFormZoom() {
+  const zoom = $("form-zoom");
+  zoom.classList.remove("hidden");
+  // On a phone, fitting the whole board on screen leaves it small and banded by
+  // empty board top and bottom, so it opens FILLED — scaled to the screen's
+  // height, panned sideways — and a tap steps back to the whole thing. A screen
+  // wide enough to fit it properly opens fitted, where nothing is gained by
+  // filling.
+  const portrait = window.innerWidth / window.innerHeight < 0.9;
+  setFormZoomFill(portrait);
+  if (portrait) zoom.scrollLeft = (zoom.scrollWidth - zoom.clientWidth) / 2;
+}
+function setFormZoomFill(fill) {
+  $("form-zoom").classList.toggle("filled", fill);
+  $("form-zoom-hint").textContent = fill ? "Tap to fit · ✕ to close" : "Tap to fill · ✕ to close";
+}
 function closeFormZoom() { $("form-zoom").classList.add("hidden"); }
 $("form-photo").addEventListener("click", openFormZoom);
-$("form-zoom").addEventListener("click", closeFormZoom);
+// tapping the board toggles fit/fill; the ✕ is the way out, so a stray tap
+// while reading never throws you back to the rules
+$("form-zoom").addEventListener("click", (e) => {
+  if (e.target.id === "form-zoom-close") return closeFormZoom();
+  setFormZoomFill(!$("form-zoom").classList.contains("filled"));
+});
 
 // Escape closes the top layer first — the zoom, then the sheet.
 document.addEventListener("keydown", (e) => {

@@ -1422,12 +1422,23 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .form-photo img{display:block;width:100%;height:auto;border-radius:14px}
 .form-photo-hint{position:absolute;right:10px;bottom:10px;padding:5px 10px;border-radius:999px;
   background:rgba(8,31,27,.72);color:#FAF3E8;font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
-#form-zoom{position:fixed;inset:0;z-index:97;background:#081F1B;display:flex;align-items:center;justify-content:center;cursor:pointer}
-#form-zoom img{max-width:100%;max-height:100%;object-fit:contain}
-/* portrait: turn the strip so it uses the long side of the screen */
-@media (orientation:portrait){
-  #form-zoom img{max-width:none;max-height:none;width:100dvh;height:auto;transform:rotate(90deg)}
-}
+#form-zoom{position:fixed;inset:0;z-index:97;background:#081F1B;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;overflow:auto;-webkit-overflow-scrolling:touch}
+#form-zoom img{max-width:100%;max-height:100%;object-fit:contain;padding:8px}
+/* A 5:4 board cannot fill a 9:19.5 phone without cropping, so there are two
+   states and the phone opens in the useful one: FILLED — the board scaled to
+   the screen's height and panned sideways — with a tap to drop back to the
+   whole thing at once. On anything wide enough, fitting already fills it and
+   this never engages. */
+#form-zoom.filled{display:block}
+#form-zoom.filled img{max-width:none;max-height:none;width:auto;height:100dvh;padding:0;display:block}
+.form-zoom-hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);
+  padding:6px 12px;border-radius:999px;background:rgba(8,31,27,.8);color:#FAF3E8;pointer-events:none;
+  font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
+/* v2 of the storyboard is a 2x2 grid at 5:4, so it fills a phone screen the
+   right way up. The v1 strip was 16:9 and had to be rotated in portrait to be
+   any use — that rule is gone with it, because rotating a near-square image
+   makes it SMALLER, not bigger. */
 .form-zoom-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;color:#FAF3E8;border-color:rgba(250,243,232,.4)}
 .form-link{background:none;border:0;padding:8px 2px 2px;margin:4px 0 0;display:block;cursor:pointer;
   flex:0 0 100%;width:100%;text-align:center;
