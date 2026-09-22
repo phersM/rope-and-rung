@@ -55,14 +55,14 @@ would read better still. `prompt-v2.txt` carries that variant at the bottom.
 ## Where it is used
 
 `#form-sheet` in `index.html` — "What counts as one", opened from the link under the log
-actions. The sheet also carries a **drawn, animated** side view of the rep: the pose is solved
-(two-link inverse kinematics, `pfBody`/`pfUpper`/`pfFore` in `style.css`) so the hand never
-slides off the floor, the body swings 28.7 to 10 degrees, and the elbow closes to 50 — chest
-at fist height. That animation is the app's own vector work, not generated: it is ~2KB, sharp
-at any size, works offline, and the form in it is exactly what the rules say.
+actions. The link carries a small thumbnail of this board, so it reads as something to look at
+rather than a line of text.
 
-The still storyboard and the animation do different jobs and both earn their place: the
-drawing shows what a body looks like in each position, the animation shows the movement.
+A drawn, animated side view of the rep sat above the rules for a few hours on 2026-09-22 — the
+pose solved with two-link inverse kinematics so the hand never slid off the floor. The owner
+cut it ("forget the animation, it's not working"): it was accurate and still read as a diagram
+rather than a person, and this board says the same thing better. The maths is in the git
+history if it is ever wanted.
 
 ---
 

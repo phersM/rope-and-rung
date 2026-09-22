@@ -471,8 +471,10 @@ input, textarea{-webkit-user-select:text; user-select:text}
 #mate-postit-zone{display:flex;justify-content:flex-end;margin-top:10px}
 #mate-postit-zone .postit{transform:rotate(3deg)}
 
-.today-actions{display:flex;gap:10px;padding:16px 22px 12px;margin-top:auto}
-.today-actions .btn{flex:1}
+/* wrap, so the "what counts as one" link drops onto its own line under the
+   two action buttons instead of being squeezed in beside them */
+.today-actions{display:flex;flex-wrap:wrap;gap:10px;padding:16px 22px 12px;margin-top:auto}
+.today-actions .btn{flex:1 1 0}
 
 /* Section heading for the crew corkboard, now that Home and Crew are one
    screen and the strip above it carries its own "This week" title. Needs a
@@ -1388,31 +1390,18 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 @keyframes celFlick{0%,100%{opacity:.85;transform:scale(1)}41%{opacity:1;transform:scale(1.12)}78%{opacity:.6;transform:scale(.93)}}
 @keyframes celFlick2{0%,100%{opacity:.95;transform:scale(1)}24%{opacity:1;transform:scale(1.1)}71%{opacity:.7;transform:scale(.9)}}
 
-/* ---- "what counts as one": the rep, drawn and solved ----
-   The figure is three nested groups — body about the toes, upper arm about the
-   shoulder, forearm about the elbow — and the keyframes below are the solved
-   inverse kinematics at fourteen stops, not hand-tuned angles. That is what
-   keeps the hand nailed to the floor through the whole cycle; every eyeballed
-   version of this slides the hand around, which is the tell. Body swings 28.7
-   to 10 degrees, elbow closes to 50: chest at fist height, a real rep depth.
-   Under prefers-reduced-motion the blanket rule at the top of this file stops
-   the cycle at its last keyframe, which is the locked-out top pose — a correct
-   still, so nothing extra is needed here. */
+/* ---- "what counts as one" ----
+   The shared definition of a rep. A crew on the honour system needs one, or two
+   people are counting different things. A drawn, animated side view of the rep
+   lived here and was cut on 2026-09-22 (owner: "forget the animation, it's not
+   working") — the solved-IK stick figure was accurate and still read as a
+   diagram rather than a person, and the chalk board below says the same thing
+   better. The maths is in the git history if it is ever wanted again. */
 #form-sheet{z-index:92;align-items:flex-start;justify-content:center;overflow-y:auto;padding:0}
 .form-sheet-inner{width:100%;max-width:560px;padding:22px 20px 40px;display:flex;flex-direction:column;gap:16px}
 .form-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .form-close,.form-zoom-close{width:38px;height:38px;flex:none;border-radius:50%;border:1.5px solid var(--hair);
   background:transparent;color:var(--ink);font-size:15px;cursor:pointer}
-.form-board{border-radius:16px;background:var(--studio-bg,#0B3B34);padding:14px 10px;overflow:hidden}
-@media (prefers-color-scheme: light){.form-board{background:#0B3B34}}
-.pf-fig{display:block;width:100%;height:auto}
-.pf-fig .pf-line,.pf-fig .pf-ground{fill:none;stroke:#FAF3E8;stroke-width:5.6;stroke-linecap:round;stroke-linejoin:round}
-.pf-fig .pf-ground{stroke-width:3;opacity:.5}
-.pf-fig .pf-head{fill:none;stroke:#FAF3E8;stroke-width:5.6}
-.pf-fig .pf-far{opacity:.42}
-.pf-body{transform-box:view-box;transform-origin:28px 108px;animation:pfBody 3.4s linear infinite}
-.pf-upper{transform-box:view-box;transform-origin:159.6px 36px;animation:pfUpper 3.4s linear infinite}
-.pf-fore{transform-box:view-box;transform-origin:159.6px 72px;animation:pfFore 3.4s linear infinite}
 .form-rules{list-style:none;display:flex;flex-direction:column;gap:12px;margin:2px 0 0}
 .form-rules li{position:relative;padding-left:26px;font-size:14.5px;line-height:1.5;color:var(--ink)}
 .form-rules li::before{content:"";position:absolute;left:6px;top:8px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
@@ -1440,10 +1429,12 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
    any use — that rule is gone with it, because rotating a near-square image
    makes it SMALLER, not bigger. */
 .form-zoom-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;color:#FAF3E8;border-color:rgba(250,243,232,.4)}
-.form-link{background:none;border:0;padding:8px 2px 2px;margin:4px 0 0;display:block;cursor:pointer;
-  flex:0 0 100%;width:100%;text-align:center;
-  font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.form-link{display:flex;align-items:center;justify-content:center;gap:10px;flex:0 0 100%;width:100%;
+  background:none;border:0;padding:10px 2px 2px;margin:2px 0 0;cursor:pointer}
+.form-link img{width:46px;height:36px;object-fit:cover;border-radius:7px;opacity:.9;
+  border:1px solid var(--hair);flex:none}
+.form-link span{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 
 /* council polish round (Expansionist QoL, 2026-07-20) */
 /* dial: volt discharge each full revolution */
@@ -1983,52 +1974,6 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   @keyframes celebrateFade{from{opacity:0}to{opacity:1}}
 }
 
-/* solved pushup cycle — see the note above .pf-fig */
-@keyframes pfBody{
-  0%{transform:rotate(-0.00deg)}
-  7.692%{transform:rotate(1.66deg)}
-  15.38%{transform:rotate(6.04deg)}
-  23.08%{transform:rotate(11.59deg)}
-  30.77%{transform:rotate(16.35deg)}
-  38.46%{transform:rotate(18.64deg)}
-  46.15%{transform:rotate(18.70deg)}
-  53.85%{transform:rotate(17.90deg)}
-  61.54%{transform:rotate(14.66deg)}
-  69.23%{transform:rotate(9.87deg)}
-  76.92%{transform:rotate(4.92deg)}
-  84.62%{transform:rotate(1.27deg)}
-  92.31%{transform:rotate(-0.00deg)}
-  100%{transform:rotate(-0.00deg)}
 }
-@keyframes pfUpper{
-  0%{transform:rotate(0.00deg)}
-  7.692%{transform:rotate(20.40deg)}
-  15.38%{transform:rotate(42.86deg)}
-  23.08%{transform:rotate(65.62deg)}
-  30.77%{transform:rotate(85.60deg)}
-  38.46%{transform:rotate(96.34deg)}
-  46.15%{transform:rotate(96.68deg)}
-  53.85%{transform:rotate(92.76deg)}
-  61.54%{transform:rotate(78.26deg)}
-  69.23%{transform:rotate(58.69deg)}
-  76.92%{transform:rotate(37.87deg)}
-  84.62%{transform:rotate(17.66deg)}
-  92.31%{transform:rotate(0.00deg)}
-  100%{transform:rotate(0.00deg)}
 }
-@keyframes pfFore{
-  0%{transform:rotate(0.00deg)}
-  7.692%{transform:rotate(-17.00deg)}
-  15.38%{transform:rotate(-29.36deg)}
-  23.08%{transform:rotate(-35.70deg)}
-  30.77%{transform:rotate(-35.58deg)}
-  38.46%{transform:rotate(-33.12deg)}
-  46.15%{transform:rotate(-33.02deg)}
-  53.85%{transform:rotate(-34.13deg)}
-  61.54%{transform:rotate(-36.29deg)}
-  69.23%{transform:rotate(-34.46deg)}
-  76.92%{transform:rotate(-27.12deg)}
-  84.62%{transform:rotate(-15.07deg)}
-  92.31%{transform:rotate(0.00deg)}
-  100%{transform:rotate(0.00deg)}
 }
