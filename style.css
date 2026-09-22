@@ -1406,6 +1406,15 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .form-rules li{position:relative;padding-left:26px;font-size:14.5px;line-height:1.5;color:var(--ink)}
 .form-rules li::before{content:"";position:absolute;left:6px;top:8px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
 .form-rules b{font-weight:700}
+/* The screw cue, lifted out of the list: an accent rule down the side, the way
+   a coach would underline one thing on the board. Accent teal rather than volt
+   — DESIGN.md rations volt to motion and reward moments, and this is neither. */
+.form-cue{border-left:3px solid var(--accent);border-radius:0 var(--r-md) var(--r-md) 0;
+  background:rgba(var(--peak-rgb),.07);padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.form-cue-title{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--accent)}
+.form-cue p{font-size:14px;line-height:1.5;color:var(--ink)}
+.form-cue p+p{color:var(--muted);font-size:13.5px}
 .form-note{font-size:13px;color:var(--muted);line-height:1.5}
 .form-photo{display:block;width:100%;padding:0;border:0;background:transparent;border-radius:14px;overflow:hidden;cursor:pointer;position:relative}
 .form-photo img{display:block;width:100%;height:auto;border-radius:14px}

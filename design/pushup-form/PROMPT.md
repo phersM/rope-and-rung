@@ -87,3 +87,17 @@ sideways from centre — with a tap back to the whole board.
 Two things still wrong with v2, left alone deliberately: the figures carry faint chest contours
 that read as shading (the brief said outline only), and the reading order of a 2x2 grid is only
 obvious because the four rules beside it are in the same order.
+
+---
+
+## The screw cue (2026-09-22)
+
+The sheet carries one cue pulled out of the four rules: press the palms flat and try to twist
+them outward into the floor without letting them move, which rotates the elbows in toward the
+ribs and sets the shoulder. Owner's request, from a coaching post they sent:
+https://www.instagram.com/p/DQIWf4fEn4C/
+
+**The wording in the app is ours, deliberately.** The cue itself is common coaching knowledge
+and not anyone's property, but the post's phrasing is, so nothing was copied across — and if
+that post ever vanishes, the app does not carry a quotation with no source. If someone wants to
+credit it, credit it in the crew chat, not in the UI.
