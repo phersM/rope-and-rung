@@ -1228,19 +1228,11 @@ function renderToday() {
       refetch();
     }));
 
-  // mate's most recent excuse (today or yesterday) as a post-it
-  const zone = $("mate-postit-zone");
-  const mates = state.profiles.filter((p) => p.id !== state.me.id);
-  let note = "";
-  for (const m of mates) {
-    const ex = state.statuses.find((st) => st.profile_id === m.id && st.kind === "excuse" &&
-      (st.day === today() || st.day === addDays(today(), -1)));
-    if (ex?.excuse_text) {
-      note = `<div class="postit${postitAgeClass(ex.day)}"><small>${esc(m.name)} · ${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div>`;
-      break;
-    }
-  }
-  zone.innerHTML = note;
+  // A crewmate's excuse used to be pinned here, on YOUR log screen. It belongs
+  // on the Crew screen, where each person's post-it hangs on their own card —
+  // "when another person writes an excuse it shows up on the log page of
+  // everyone, not just the crew page, not my excuse" (owner's trial,
+  // 2026-09-24). The Log screen is your own day; nobody else's business is on it.
 
   // rest button
   const restBtn = $("rest-btn");

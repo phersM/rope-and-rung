@@ -471,9 +471,10 @@ input, textarea{-webkit-user-select:text; user-select:text}
 #mate-postit-zone{display:flex;justify-content:flex-end;margin-top:10px}
 #mate-postit-zone .postit{transform:rotate(3deg)}
 
-/* wrap, so the "how we do them" card drops onto its own line under the
-   two action buttons instead of being squeezed in beside them */
-.today-actions{display:flex;flex-wrap:wrap;gap:10px;padding:16px 22px 12px;margin-top:auto}
+.today-actions{display:flex;gap:10px;padding:0 22px 12px}
+/* the reference card and the two actions are one bottom group: the card above,
+   the buttons nearest the thumb, the whole thing clear of the floating dock */
+.today-bottom{margin-top:auto;padding-top:16px}
 .today-actions .btn{flex:1 1 0}
 
 /* Section heading for the crew corkboard, now that Home and Crew are one
@@ -847,8 +848,19 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .avatars button:nth-child(7){animation-delay:.35s}.avatars button:nth-child(8){animation-delay:.4s}
 
 /* overlays / onboarding / modal */
-.overlay{position:fixed;inset:0;background:var(--paper);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;
+/* align-items:center CANNOT scroll: when the content is taller than the
+   viewport a centred flex child overflows BOTH ends and the top is
+   unreachable. On a phone with the keyboard up that is most of the screen,
+   which is how joining a crew died on Android and in iOS Safari — the name
+   and avatar step rendered, and the button that finishes it could not be
+   reached or scrolled to (owner's trial, 2026-09-24). flex-start plus auto
+   margins on the child keeps it centred when it fits and lets it scroll
+   when it does not. */
+.overlay{position:fixed;inset:0;background:var(--paper);z-index:50;display:flex;align-items:flex-start;justify-content:center;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:24px 24px calc(24px + env(safe-area-inset-bottom,0px));
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")}
+.overlay>*{margin-top:auto;margin-bottom:auto}
 #excuse-modal{background:rgba(var(--shadow-rgb),.45)}
 #confirm-modal{background:rgba(var(--shadow-rgb),.45)}
 .ob-inner{width:100%;max-width:340px}
@@ -1443,7 +1455,7 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
    1.24:1 against the image's 1.25, so nothing is cropped away), the title, and
    a line saying what is inside. Card treatment, --r-lg, hairline, like every
    other card in the app. */
-.form-card{display:flex;align-items:center;gap:13px;width:100%;flex:0 0 100%;margin:2px 0 0;
+.form-card{display:flex;align-items:center;gap:13px;width:calc(100% - 44px);margin:0 22px 12px;
   padding:10px;text-align:left;cursor:pointer;
   background:var(--card);border:1px solid var(--hair);border-radius:var(--r-lg)}
 .form-card img{width:104px;height:84px;flex:none;object-fit:cover;border-radius:var(--r-md);
