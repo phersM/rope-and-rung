@@ -1,6 +1,6 @@
 // Rope & Rung service worker — network-first with cache fallback.
 // Fresh when online, fully functional offline, instant shell loads.
-const CACHE = "pushpact-v17";  // v17: trial fixes — joining, the stray post-it
+const CACHE = "pushpact-v18";  // v18: an excuse you no longer need can be cleared
                                // (v4 shipped it in navy with a gold glint, matching
                                //  neither the palette nor the launch screen)
 const SHELL = [

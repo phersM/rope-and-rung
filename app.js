@@ -1247,8 +1247,16 @@ function renderToday() {
   const st = dayState({ sets: state.sets, statuses: state.statuses, profileId: state.me.id, day: today(), today: today(), settings: state.settings });
   const excusedToday = state.statuses.find((s) => s.profile_id === state.me.id && s.day === today() && s.kind === "excuse");
   const eb = $("excuse-btn");
-  eb.classList.toggle("hidden", st.state === "met" || restedToday);
-  eb.textContent = excusedToday ? "Excused ✓ (tap to edit)" : "Write an excuse";
+  // Hiding this on a met day is right — you cannot excuse a day you did — but
+  // only when there is no excuse to manage. Write one in the morning, do the
+  // pushups at night, and the day turns met: the button used to vanish, the
+  // History screen only offers "Excuse it" on MISSED days, and the excuse you
+  // no longer need stayed pinned on your crew card with no way to take it
+  // down. So an existing excuse always keeps its way back in.
+  eb.classList.toggle("hidden", !excusedToday && (st.state === "met" || restedToday));
+  eb.textContent = !excusedToday ? "Write an excuse"
+    : st.state === "met" ? "Excuse still up · tap to clear"
+    : "Excused ✓ (tap to edit)";
 }
 
 // Ink tally marks — groups of 4 verticals + a diagonal strike for the 5th,
@@ -1582,7 +1590,7 @@ function renderHistDetail() {
     ${mine ? `<div class="hist-add">
         <input id="hist-reps" type="number" placeholder="+reps">
         <button id="hist-add-btn" class="btn btn-ghost">Log to this day</button>
-        ${st.state === "missed" ? '<button id="hist-excuse-btn" class="btn btn-ghost">Excuse it</button>' : ""}
+        ${st.state === "missed" || st.excuse ? `<button id="hist-excuse-btn" class="btn btn-ghost">${st.excuse ? "Edit the excuse" : "Excuse it"}</button>` : ""}
       </div>` : ""}`;
   el.classList.remove("hidden");
   if (mine) {
