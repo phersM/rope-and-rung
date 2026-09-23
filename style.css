@@ -468,8 +468,6 @@ input, textarea{-webkit-user-select:text; user-select:text}
   border-radius:2px;box-shadow:0 8px 20px rgba(var(--shadow-rgb),.14);animation:peelIn .5s var(--ease-out) .15s backwards;transform-origin:top center}
 @keyframes peelIn{from{opacity:0;transform:rotate(-8deg) translateY(-14px) scale(.9)}to{opacity:1}}
 .postit small{display:block;font-family:"Instrument Sans",sans-serif;font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--postit-ink-soft);margin-bottom:4px}
-#mate-postit-zone{display:flex;justify-content:flex-end;margin-top:10px}
-#mate-postit-zone .postit{transform:rotate(3deg)}
 
 .today-actions{display:flex;gap:10px;padding:0 22px 12px}
 /* the reference card and the two actions are one bottom group: the card above,
@@ -1501,7 +1499,7 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .postit::before{content:"";position:absolute;top:-6px;left:50%;width:11px;height:11px;margin-left:-5.5px;
   border-radius:50%;background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.9),var(--ink) 65%);
   box-shadow:0 2px 3px rgba(var(--shadow-rgb),.45);z-index:2}
-.postit.aged-1,#mate-postit-zone .postit.aged-1,.crew-card .postit.aged-1{
+.postit.aged-1,.crew-card .postit.aged-1{
   transform:rotate(-7deg) scale(1.04);box-shadow:0 10px 24px rgba(var(--shadow-rgb),.2)}
 .postit.aged-2,#mate-postit-zone .postit.aged-2,.crew-card .postit.aged-2{
   transform:rotate(9deg) scale(1.09);box-shadow:0 13px 30px rgba(var(--shadow-rgb),.28)}
