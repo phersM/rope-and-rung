@@ -1501,9 +1501,9 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   box-shadow:0 2px 3px rgba(var(--shadow-rgb),.45);z-index:2}
 .postit.aged-1,.crew-card .postit.aged-1{
   transform:rotate(-7deg) scale(1.04);box-shadow:0 10px 24px rgba(var(--shadow-rgb),.2)}
-.postit.aged-2,#mate-postit-zone .postit.aged-2,.crew-card .postit.aged-2{
+.postit.aged-2,.crew-card .postit.aged-2{
   transform:rotate(9deg) scale(1.09);box-shadow:0 13px 30px rgba(var(--shadow-rgb),.28)}
-.postit.aged-3,#mate-postit-zone .postit.aged-3,.crew-card .postit.aged-3{
+.postit.aged-3,.crew-card .postit.aged-3{
   transform:rotate(-12deg) scale(1.15);box-shadow:0 16px 36px rgba(var(--shadow-rgb),.36)}
 .postit.aged-2::after,.postit.aged-3::after{content:"";position:absolute;top:-4px;right:22%;width:9px;height:9px;
   border-radius:50%;background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.9),var(--ink) 65%);
