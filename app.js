@@ -2383,7 +2383,15 @@ function renderHome() {
   // colour exists to tell members apart, and there is only one member here.
   // It also removes a collision that would otherwise be unavoidable —
   // AVATAR_COLORS.teal IS #0F7A6D, this slab's own top stop.
-  const myMark = String(wornAvatar(state.me) ?? "").split(".")[0];
+  // Your identity colour stays on your own card. It was stripped here at first,
+  // because AVATAR_COLORS.teal IS #0F7A6D — this slab's own top stop — so a
+  // teal-avatar owner's disc measured 1.03:1 against it and vanished. But the
+  // near-white rim added below (.home-card .avatar.cc-avatar box-shadow) already
+  // separates ANY disc from the slab, so the collision is solved without
+  // discarding the colour. Dropping it was worse than the problem: the header
+  // chip keeps the colour, so the same person wore two different coloured discs
+  // on one screen — gold up top, teal on the card.
+  const myMark = wornAvatar(state.me);
   $("home-mycard").innerHTML = `
     <div class="hc-top">
       ${avatarChip(myMark, `cc-avatar st-${st.state}${isWearingAward(state.me) ? " is-ach" : ""}`)}

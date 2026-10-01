@@ -45,7 +45,7 @@ export const DEFAULT_SETTINGS = {
   // ladder below, because the crew has already banked ~72 days of real history
   // against those numbers on the shared backend. Without this fence the walk
   // rewrites that history: 53 of those 72 banked days flip met -> missed.
-  walk_from: "2026-10-12",        // the Monday the walk starts
+  walk_from: "2026-10-05",        // the Monday the walk starts
 
   // THE PRE-walk_from MATHS. NOT DEAD — DO NOT REMOVE AGAIN.
   // targetFor() reads these for every day before walk_from, and the walk's own
