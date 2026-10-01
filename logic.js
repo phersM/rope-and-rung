@@ -32,21 +32,161 @@ export function weekStart(s) {
 // ---- settings ----
 
 export const DEFAULT_SETTINGS = {
+  // From walk_from onward the daily target is a seeded random WALK, not a
+  // ladder: it wanders between a floor and a ceiling, pulled gently back toward
+  // the midpoint, and does not trend upward.
+  target_floor: 70,
+  target_ceiling: 293,
+  max_daily_jump: 59,
+  target_bounce: 0.25,            // pull toward the midpoint, 0 = pure drift
+  target_seed: "rope-and-rung",
+
+  // The day the walk takes over. Days BEFORE it are frozen on the legacy
+  // ladder below, because the crew has already banked ~72 days of real history
+  // against those numbers on the shared backend. Without this fence the walk
+  // rewrites that history: 53 of those 72 banked days flip met -> missed.
+  walk_from: "2026-10-12",        // the Monday the walk starts
+
+  // THE PRE-walk_from MATHS. NOT DEAD — DO NOT REMOVE AGAIN.
+  // targetFor() reads these for every day before walk_from, and the walk's own
+  // starting value is the legacy target for the day before walk_from (so there
+  // is no visible jump on switchover day). Deleting them re-judges banked
+  // history. They were removed once already; that is the bug this fence fixes.
   target_start: 70,
   target_step: 10,
-  step_every: "week",
   target_cap: 200,
+
   rest_days_per_week: 1,
   challenge_start: "2026-07-20", // Monday of launch week; editable in-app
 };
 
-// target(date) = min(start + step * whole weeks since challenge_start, cap)
+// ---- the daily target: a seeded random walk ----
+//
+// DETERMINISM IS THE POINT. targetFor() is called from dayState() and streak(),
+// which re-walk the entire log on every render, and (once a backend exists) on
+// every device independently. A target that differed between two calls would
+// silently re-judge history — a day that was "met" becoming "missed". So there
+// is no Math.random(), no Date.now(), and no dependence on call order here:
+// day i is a pure function of the settings and i alone.
+
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
+// FNV-1a over the string, then xorshift32 — a cheap, stable, integer-only PRNG.
+function hashStr(s) {
+  let x = 2166136261 >>> 0;
+  for (const c of s) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619) >>> 0; }
+  return x;
+}
+function rnd(seed, i) {
+  let x = hashStr(seed + ":" + i);
+  x ^= x << 13; x >>>= 0;
+  x ^= x >> 17;
+  x ^= x << 5;  x >>>= 0;
+  return x / 4294967296;
+}
+
+// Day i depends on days 0..i-1, so a naive targetFor() is O(N) and a render
+// (streak × dayState) would be O(N²). The generated sequence is memoised and
+// extended lazily; the cache key is every setting the walk reads, so an admin
+// edit to any of them rebuilds it rather than serving stale numbers.
+const MAX_WALK_DAYS = 20000; // ~55 years — a corrupt challenge_start must not hang the app
+const walkCache = { key: null, seq: null, last: 0 };
+
+// The cache key is every setting the walk reads. walk_from is in it TWICE over:
+// `from` fixes the index origin (which calendar day is walk day 0) and `start`
+// fixes the value day 0 grows out of. An admin moving the date changes both, so
+// both are keyed — otherwise the old sequence would be served under the new date.
+function walkKey(s, from, start) {
+  return [s.target_floor, s.target_ceiling, s.max_daily_jump, s.target_bounce,
+    s.target_seed, s.challenge_start, from, start].join("\u0000");
+}
+
+// The walk's value on day i (0-based from the switchover), grown from `start`.
+function walkAt(s, i, from, start) {
+  const floor = Number(s.target_floor), ceiling = Number(s.target_ceiling);
+  const maxJump = Number(s.max_daily_jump), bounce = Number(s.target_bounce);
+  const centre = (floor + ceiling) / 2;
+  const key = walkKey(s, from, start);
+  if (walkCache.key !== key) { walkCache.key = key; walkCache.seq = []; walkCache.last = start; }
+  const seq = walkCache.seq;
+  for (let n = seq.length; n <= i; n++) {
+    let d = (centre - walkCache.last) * bounce + (rnd(s.target_seed, n) * 2 - 1) * maxJump;
+    d = clamp(d, -maxJump, maxJump);
+    walkCache.last = Math.round(clamp(walkCache.last + d, floor, ceiling));
+    seq.push(walkCache.last);
+  }
+  return seq[i];
+}
+
+// ---- the legacy ladder: the maths every day before walk_from is frozen on ----
+//
+// target(day) = min(target_start + target_step * whole weeks since
+// challenge_start, target_cap) — exactly what the crew climbed, verbatim from
+// the pre-walk code, including "a day before challenge_start owes target_start".
+function legacyTarget(s, day) {
+  const start = Number(s.target_start);
+  if (!s.challenge_start) return start;
+  const days = daysBetween(s.challenge_start, day);
+  if (!Number.isFinite(days) || days < 0) return start;
+  return Math.min(start + Number(s.target_step) * Math.floor(days / 7), Number(s.target_cap));
+}
+
+// walk_from is usable only if it is a real "YYYY-MM-DD" calendar day. The
+// round-trip through parseDay rejects both junk and dates that do not exist
+// ("2026-02-30" would otherwise silently roll into March).
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+function walkFromOf(s) {
+  const w = s.walk_from;
+  if (typeof w !== "string" || !DAY_RE.test(w)) return null;
+  return toDayStr(parseDay(w)) === w ? w : null;
+}
+
 export function targetFor(day, settings = DEFAULT_SETTINGS) {
   const s = { ...DEFAULT_SETTINGS, ...settings };
-  const days = daysBetween(s.challenge_start, day);
-  if (days < 0) return s.target_start;
-  const weeks = Math.floor(days / 7);
-  return Math.min(s.target_start + s.target_step * weeks, s.target_cap);
+  const from = walkFromOf(s);
+
+  // No usable walk_from (absent, blank, or not a real date): the walk applies
+  // from challenge_start and starts at the midpoint — byte-for-byte the
+  // behaviour from before this fence existed, so a crew without the field sees
+  // no change at all.
+  if (from === null) {
+    let i = s.challenge_start ? daysBetween(s.challenge_start, day) : 0;
+    if (!Number.isFinite(i) || i < 0) i = 0;
+    const centre = (Number(s.target_floor) + Number(s.target_ceiling)) / 2;
+    return walkAt(s, Math.min(i, MAX_WALK_DAYS), "", centre);
+  }
+
+  let i = daysBetween(from, day);
+  // An unparseable `day` would make daysBetween NaN; as before, read it as day 0.
+  if (!Number.isFinite(i)) i = 0;
+  // Before the switchover, history is frozen. This is the whole point of T7.
+  if (i < 0) return legacyTarget(s, day);
+  // Walk day 0 IS walk_from, and it grows out of yesterday's legacy number, so
+  // nobody wakes up on switchover day to a target unrelated to the day before.
+  return walkAt(s, Math.min(i, MAX_WALK_DAYS), from, legacyTarget(s, addDays(from, -1)));
+}
+
+// ---- stored-data version stamp (used by app.js on boot) ----
+//
+// Pure so it can be tested without localStorage: hand it the stamp it read, the
+// full key list, the current DATA_VERSION and the name of the stamp key, and it
+// says what to do. `keys` is every localStorage key; the stamp key itself is
+// excluded before asking "is there other data here?".
+export function decideDataReset({ stamp, keys = [], version, versionKey, prefix = "pushpact-" }) {
+  const others = keys.filter((k) => k.startsWith(prefix) && k !== versionKey);
+  if (stamp === null || stamp === undefined) {
+    // No stamp: an install from before the stamp existed, or a fresh one.
+    // ADOPT it silently — never wipe. This case used to wipe, on the belief that
+    // a device's localStorage WAS the user's data. It is not: the crew, profiles
+    // and every banked set live on the crew API, and localStorage holds only the
+    // session pointer (crew id / profile id / code) plus a few dismissals.
+    // Wiping here would have logged every existing member out at the crew-code
+    // screen and told them their data was reset, which would have been false.
+    // A wipe now only ever happens on a deliberate DATA_VERSION bump below.
+    return { wipe: false, stamp: true, notice: false };
+  }
+  if (String(stamp) !== String(version)) return { wipe: true, stamp: true, notice: true };
+  return { wipe: false, stamp: false, notice: false };
 }
 
 // ---- tallies ----

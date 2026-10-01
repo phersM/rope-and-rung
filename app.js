@@ -4,7 +4,7 @@ import {
   toDayStr, addDays, parseDay, daysBetween, targetFor, dayTally, allTimeTotal, isLate,
   canDeclareRest, restsUsedInWeek, dayState, streak, weekStart, weeklySpoon, DEFAULT_SETTINGS,
   weeklyEagle, achievementUnlocks, currentAward, decideAvatar, wardrobe, unseenUnlocks,
-  ACHIEVEMENTS, ACHIEVEMENT_BY_KEY, decideCelebrations,
+  ACHIEVEMENTS, ACHIEVEMENT_BY_KEY, decideCelebrations, decideDataReset,
 } from "./logic.js";
 import { makeAdapter, CODE_LENGTH, looksLikeCode } from "./data.js";
 
@@ -12,6 +12,44 @@ const $ = (id) => document.getElementById(id);
 const REPS_PER_REV = 20;            // one full revolution of the dial = 20 pushups
 const DEG_PER_REP = 360 / REPS_PER_REV;
 const MAX_SET = 500;
+
+// ---------- stored-data version stamp ----------
+//
+// Bump DATA_VERSION whenever a change re-judges stored history (the 2026-09-29
+// switch from the +10-a-week ladder to the seeded walk did exactly that: every
+// past day would have been re-scored against a different target). On boot the
+// stamp is compared and stale data is wiped once per device, so nobody is left
+// staring at a history the new rules have silently rewritten.
+const DATA_VERSION = 2;
+const DATA_VERSION_KEY = "pushpact-data-version";
+
+// The one wipe used by BOTH the boot migration and the admin "Erase all data on
+// this phone" button — two copies of this would drift.
+function eraseLocalData() {
+  Object.keys(localStorage).filter((k) => k.startsWith("pushpact-")).forEach((k) => localStorage.removeItem(k));
+}
+
+// Runs at module scope, not inside boot(): it must land before ANYTHING reads
+// stored state — before session.load(), before makeAdapter() opens
+// "pushpact-local", and before the installHint() IIFE at the foot of this file
+// reads its own keys. Booting on state we are about to delete would render one
+// frame of the old crew and then blank it.
+let dataWasReset = false;
+(function migrateLocalData() {
+  let plan;
+  try {
+    plan = decideDataReset({
+      stamp: localStorage.getItem(DATA_VERSION_KEY),
+      keys: Object.keys(localStorage),
+      version: DATA_VERSION, versionKey: DATA_VERSION_KEY,
+    });
+  } catch { return; } // storage blocked (private mode) — nothing stored, nothing to migrate
+  try {
+    if (plan.wipe) eraseLocalData();
+    if (plan.stamp) localStorage.setItem(DATA_VERSION_KEY, String(DATA_VERSION));
+  } catch { /* ignore: a wipe we cannot write is a wipe we did not need */ }
+  dataWasReset = plan.notice;
+})();
 
 const state = {
   adapter: null, crew: null, me: null,
@@ -56,6 +94,11 @@ async function boot() {
     $("local-banner").classList.add("hidden");
     localStorage.setItem("pushpact-solo-dismissed", "1");
   });
+  // A wipe with no explanation reads as a bug. No dismissal is persisted: the
+  // stamp was written during the wipe, so the next boot matches and this line
+  // cannot come back on its own.
+  $("reset-banner").classList.toggle("hidden", !dataWasReset);
+  $("rb-close").addEventListener("click", () => $("reset-banner").classList.add("hidden"));
   updateHeadDate();
 
   const sess = session.load();
@@ -1658,15 +1701,17 @@ function renderLadder() {
   const currentWeekNum = daysSince < 0 ? 0 : Math.floor(daysSince / 7) + 1;
   const totalWeeks = Math.max(currentWeekNum + LADDER_UPCOMING, LADDER_MIN_WEEKS);
   const pid = state.histPerson;
-  const lo = settings.target_start, hi = Math.max(settings.target_cap, lo + 1);
+  const lo = settings.target_floor, hi = Math.max(settings.target_ceiling, lo + 1);
 
   let rowsHTML = "";
   for (let w = totalWeeks; w >= 1; w--) {
     const wkStart = weekStartOfWeekNum(w);
     const wkEnd = addDays(wkStart, 6);
     const target = targetFor(wkStart, settings);
-    const atCap = settings.target_step > 0 && target >= settings.target_cap;
-    const capStart = atCap && (w === 1 || targetFor(weekStartOfWeekNum(w - 1), settings) < settings.target_cap);
+    // The "cap" tag is gone with the ladder: a wander walk has no week where the
+    // climb stops, and the old test (step > 0 && target >= cap) would have
+    // pinned a false "cap" badge on every rung that merely touched the ceiling.
+    const capStart = false;
 
     let cls = "future";
     if (wkEnd < t) cls = "past";
@@ -1726,9 +1771,9 @@ function renderLadder() {
 let setAvatar = "pumper", setColor = "teal";
 
 function renderSettings() {
-  $("set-start").value = state.settings.target_start;
-  $("set-step").value = state.settings.target_step;
-  $("set-cap").value = state.settings.target_cap;
+  $("set-start").value = state.settings.target_floor;
+  $("set-step").value = state.settings.max_daily_jump;
+  $("set-cap").value = state.settings.target_ceiling;
   $("set-rest").value = state.settings.rest_days_per_week;
   $("set-startdate").value = state.settings.challenge_start;
   // Both are filled every time: the hidden input keeps the name alive across a
@@ -1796,8 +1841,8 @@ $("set-profile-save").addEventListener("click", async () => {
   setTimeout(() => ($("set-profile-msg").textContent = ""), 2000);
 });
 
-// "Challenge start (Monday)" has to actually BE a Monday — the escalation
-// math (targetFor) counts whole weeks from this date, while the rest-day
+// "Challenge start (Monday)" has to actually BE a Monday — the target walk
+// (targetFor) counts its days from this date, while the rest-day
 // cap (weekStart) is anchored to real calendar Mondays; a non-Monday start
 // would let those two silently drift out of sync. <input type=date> lets
 // you pick any day, so snap it the moment it changes rather than relying
@@ -1807,13 +1852,17 @@ $("set-startdate").addEventListener("change", (e) => {
 });
 
 $("set-save").addEventListener("click", async () => {
+  const floor = num("set-start", 1);
   const s = {
     ...state.settings,
-    target_start: num("set-start", 1), target_step: num("set-step", 0),
-    target_cap: num("set-cap", 1), rest_days_per_week: num("set-rest", 0),
+    target_floor: floor, max_daily_jump: num("set-step", 0),
+    // a ceiling at or below the floor would make the walk a flat line at best
+    // and NaN the ladder's scaling at worst
+    target_ceiling: Math.max(num("set-cap", 1), floor + 1),
+    rest_days_per_week: num("set-rest", 0),
     challenge_start: $("set-startdate").value ? weekStartOf($("set-startdate").value) : state.settings.challenge_start,
   };
-  const rulesChanged = ["target_start", "target_step", "target_cap", "rest_days_per_week", "challenge_start"]
+  const rulesChanged = ["target_floor", "max_daily_jump", "target_ceiling", "rest_days_per_week", "challenge_start"]
     .some((k) => String(s[k]) !== String(state.settings[k]));
   if (rulesChanged && !(await confirmSheet("This rewrites the challenge for the whole crew, effective immediately — everyone's target moves. Apply it?", { confirmLabel: "Apply for everyone", cancelLabel: "Not yet" }))) return;
   await state.adapter.saveSettings(state.crew.id, s, $("set-crewname").value.trim());
@@ -2005,12 +2054,12 @@ $("set-erase").addEventListener("click", async () => {
     { confirmLabel: "Erase everything", cancelLabel: "Keep my data", danger: true }
   );
   if (!ok) return;
-  Object.keys(localStorage).filter((k) => k.startsWith("pushpact-")).forEach((k) => localStorage.removeItem(k));
+  eraseLocalData(); // shared with the boot-time DATA_VERSION migration
   location.reload();
 });
 
 // simulate date: overrides today() everywhere so the owner can walk the
-// challenge through fake days (Monday +10 escalation, weekly rest cap)
+// challenge through fake days (the day-by-day target walk, weekly rest cap)
 // without waiting a real week or hand-editing localStorage.
 $("set-sim-date").addEventListener("change", (e) => {
   if (e.target.value) localStorage.setItem("pushpact-date-override", e.target.value);
@@ -2211,15 +2260,54 @@ function renderHome() {
   // council: warn the night before the target rises, never spring it
   const nudge = targetFor(addDays(today(), 1), state.settings) > st.target
     ? ` · target rises to ${targetFor(addDays(today(), 1), state.settings)} tomorrow` : "";
+  // Owner feedback 2026-10-01: "the profile of the person (the phone they are
+  // on) looks unmatched to the rest of the crew log." It wasn't only styling —
+  // this card carried DIFFERENT INFORMATION from a .crew-card: no avatar, no
+  // all-time total, no PB, no excuse. The sharpest consequence was the avatar:
+  // unlocked achievements change what a member wears, so the signed-in member
+  // was the one person on this screen who could never see their own earned
+  // mark. The card now has a .crew-card's exact anatomy, in a .crew-card's
+  // exact order, drawn in a louder material — same helpers, no second
+  // rendering path (avatarChip / wornAvatar / isWearingAward / allTimeTotal /
+  // personalBest / stateLabel / postitAgeClass are all renderCrew()'s).
+  const total = allTimeTotal(state.sets, state.me.id);
+  const pb = personalBest(state.sets, state.me.id);
+  // Same window renderCrew() uses: today's excuse, or yesterday's while it is
+  // still the freshest thing said.
+  const ex = state.statuses.find((s) => s.profile_id === state.me.id && s.kind === "excuse" &&
+    (s.day === today() || s.day === addDays(today(), -1)));
+  // The avatar mark, minus its colour suffix. DESIGN.md "Colour rules": the
+  // avatar hues are PEOPLE colours and are never allowed on a brand surface —
+  // and this card IS one (the --grad slab). So the hero disc wears the brand
+  // gradient and wornAvatar() still decides WHICH mark rides on it, which is
+  // the entire point of putting an avatar here. Nothing is lost: an identity
+  // colour exists to tell members apart, and there is only one member here.
+  // It also removes a collision that would otherwise be unavoidable —
+  // AVATAR_COLORS.teal IS #0F7A6D, this slab's own top stop.
+  const myMark = String(wornAvatar(state.me) ?? "").split(".")[0];
   $("home-mycard").innerHTML = `
-    <div class="hc-top"><span class="hc-label">You, today</span><span class="state-chip bg-${st.state}">${stateLabel(st)}</span></div>
-    <div class="hc-main">
-      <div class="hc-nums"><span class="hc-tally">${st.tally}</span><span class="hc-of">/ ${st.target}</span></div>
-      <!-- design council: static dial glyph removed here — aria-hidden, non-interactive,
-           but drawn with a knob sitting at the exact progress angle right above chips
-           that DO log. Read as a broken control, not decoration. -->
+    <div class="hc-top">
+      ${avatarChip(myMark, `cc-avatar st-${st.state}${isWearingAward(state.me) ? " is-ach" : ""}`)}
+      <div class="hc-info">
+        <div class="hc-name-row">
+          <span class="hc-nm">${esc(state.me.name)} (you)</span>
+          <span class="state-chip bg-${st.state}">${stateLabel(st)}</span>
+        </div>
+        <div class="hc-nums"><span class="hc-tally">${st.tally}</span><span class="hc-of">/ ${st.target}</span></div>
+        <div class="hc-meta">${streakLine} · ${total.toLocaleString()} all-time${pb > 0 ? ` <span class="pb-badge">PB ${pb}</span>` : ""}${weekPart}${nudge}</div>
+      </div>
     </div>
-    <div class="hc-meta">${streakLine}${weekPart}${nudge}</div>
+    <!-- design council: static dial glyph removed here — aria-hidden, non-interactive,
+         but drawn with a knob sitting at the exact progress angle right above chips
+         that DO log. Read as a broken control, not decoration. -->
+    <!-- DELIBERATELY NO 7-day .strip here, unlike a .crew-card. #week-strip sits
+         directly below this card and already shows the signed-in member the same
+         seven days in a richer form: labelled Mon-Sun, today marked, each cell
+         tappable through to History, with an "N/N this week" count. A second
+         seven-cell row inches above it is redundant noise, and the owner asked
+         for subtle. If a later pass reads this omission as an oversight and
+         "fixes" it, it is not an oversight. -->
+    ${ex?.excuse_text ? `<div class="hc-postit"><div class="postit${postitAgeClass(ex.day)}"><small>${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div></div>` : ""}
     <button class="btn hc-cta" id="hc-cta">Log pushups ›</button>`;
   $("hc-cta").addEventListener("click", () => switchScreen("today"));
 

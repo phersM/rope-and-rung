@@ -1,6 +1,8 @@
 // Rope & Rung service worker — network-first with cache fallback.
 // Fresh when online, fully functional offline, instant shell loads.
-const CACHE = "pushpact-v18";  // v18: an excuse you no longer need can be cleared
+const CACHE = "pushpact-v19";  // v19: seeded random daily target from 12 Oct (fenced so
+                               //      nothing before it is re-judged), and your own card on
+                               //      the crew screen now matches everyone else's
                                // (v4 shipped it in navy with a gold glint, matching
                                //  neither the palette nor the launch screen)
 const SHELL = [

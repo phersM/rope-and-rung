@@ -256,7 +256,7 @@
       </div>
       <!-- long-form description: profile-step-only per owner (was last child
            of .ob-inner, shown on both steps; re-scoped in ITEM 2). -->
-      <p class="ob-fine-tab">The daily target starts easy and climbs a little every Monday (the crew can tune it in Settings). Miss a day? Your excuse goes up where your friends can see it.</p>
+      <p class="ob-fine-tab">The daily target changes every day — some days are easy, some are not, and you only find out when the day opens (the crew can tune the range in Settings). Miss a day? Your excuse goes up where your friends can see it.</p>
     </div>
   </div>
   <div class="ob-studio" aria-hidden="true">Wild Phersday</div>
@@ -315,6 +315,12 @@
   </header>
 
   <div id="local-banner" class="local-banner hidden"><span>Solo for now — pushups stay on this phone until your crew connects</span><button id="lb-close" aria-label="Dismiss">✕</button></div>
+
+  <!-- Shown once, only after a DATA_VERSION wipe (app.js). Its own element
+       rather than a second message through #local-banner: both notices can be
+       due on the same boot, and one would have silently swallowed the other.
+       Same .local-banner class, same dismiss pattern — no new CSS. -->
+  <div id="reset-banner" class="local-banner hidden"><span>Fresh start — this update cleared the data on this phone, so the challenge has restarted from week 1</span><button id="rb-close" aria-label="Dismiss">✕</button></div>
 
   <!-- TODAY / LOG -->
   <main id="screen-today" class="screen hidden">
@@ -498,10 +504,14 @@
       <p class="hint">Days roll over at midnight on your phone's clock. The app can't send iPhone notifications — set a daily alarm or Reminder if you want a prod.</p>
     </div>
     <div class="set-card">
-      <div class="l-title">The escalation</div>
-      <label class="lbl">Week-1 daily target <input id="set-start" type="number" min="1"></label>
-      <label class="lbl">Increase each Monday <input id="set-step" type="number" min="0"></label>
-      <label class="lbl">Cap <input id="set-cap" type="number" min="1"></label>
+      <div class="l-title">The daily target</div>
+      <!-- The target is a seeded walk now, not a ladder: these three bound it.
+           The ids are unchanged (set-start/set-step/set-cap) purely to avoid
+           churn — read the labels, not the ids. Seed and bounce are not exposed;
+           they stay at their approved defaults. -->
+      <label class="lbl">Lowest daily target <input id="set-start" type="number" min="1"></label>
+      <label class="lbl">Biggest day-to-day change <input id="set-step" type="number" min="0"></label>
+      <label class="lbl">Highest daily target <input id="set-cap" type="number" min="1"></label>
       <label class="lbl">Rest days per week <input id="set-rest" type="number" min="0" max="7"></label>
       <label class="lbl">Challenge start (Monday) <input id="set-startdate" type="date"></label>
     </div>

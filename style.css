@@ -220,7 +220,7 @@ input, textarea{-webkit-user-select:text; user-select:text}
    Light --paper (#FAF3E8) is bright enough that transparency eats the ground
    out from under the near-white text: measured against the paper+watermark
    ground, the gradient's TOP stop gives 3.37:1 at .72, which fails WCAG AA
-   (4.5:1) for .hc-label / .hc-of / .hc-meta -- only .hc-tally, as large text,
+   (4.5:1) for .hc-nm / .hc-of / .hc-meta -- only .hc-tally, as large text,
    would have cleared. .92 is the first passing value (4.54:1). Dark mode has
    no such problem (6.28:1 at .72) and keeps the deeper transparency, since
    that is where the watermark actually reads through. Same one-theme-only
@@ -234,13 +234,60 @@ input, textarea{-webkit-user-select:text; user-select:text}
 @media (prefers-color-scheme: dark){
   .home-card{background:linear-gradient(160deg,rgba(15,122,109,.72),rgba(11,59,52,.72))}
 }
-.hc-top{display:flex;align-items:center;justify-content:space-between}
-.hc-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
-.hc-main{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:8px}
-.hc-nums{display:flex;align-items:baseline;gap:8px}
+/* ---- the owner's own card, given a .crew-card's anatomy (2026-10-01) ------
+   Owner: "the profile of the person (the phone they are on) looks unmatched to
+   the rest of the crew log." The layout below is renderCrew()'s .cc-top /
+   .cc-info / .cc-name-row / .cc-postit skeleton, one-for-one, so the two read
+   as the same kind of object. It CANNOT reuse the .crew-card classes
+   themselves: those are written for a paper ground with --ink text and this
+   card is the --grad teal slab with --on-accent. What is shared is the markup
+   and the app.js helpers; the rules here are the teal-side adaptations.
+   The old .hc-label ("You, today") is gone — the name row now says
+   "<name> (you)", which is the same fact in the crew cards' own convention,
+   and stacking both read as a duplicate. .hc-main went with it: the tally is
+   now a row inside .hc-info, exactly where .crew-card puts .big. */
+.hc-top{display:flex;align-items:flex-start;gap:14px}
+.hc-info{flex:1;min-width:0}
+.hc-name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* mirrors .crew-card .nm at the same 19px/800. MEASURED --on-accent on the real
+   ground at this line's own y: 5.37:1 light / 8.47:1 dark, so it clears 4.5:1
+   even read as small text. NOT dimmed: unlike the .hc-label it replaces, this is
+   the card's identity line. overflow-wrap because a long name shares the row
+   with an 88px avatar at 375px. */
+.hc-nm{font-family:Archivo,sans-serif;font-weight:800;font-size:19px;letter-spacing:-.01em;min-width:0;overflow-wrap:anywhere}
+/* flex-wrap added when this moved into the narrower .hc-info column: a 4-digit
+   tally at 64px would otherwise push "/ target" past the card edge */
+.hc-nums{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:6px}
 .hc-tally{font-family:Archivo,sans-serif;font-weight:800;font-size:64px;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .hc-of{font-size:18px;font-weight:600;opacity:.8}
+/* This line now also carries the all-time total and the PB badge lifted from
+   .crew-card .sub, so its opacity was re-checked rather than assumed. MEASURED
+   off the real render (2026-10-01, pixels sampled at the lightest point of the
+   ground at this line's own y, watermark included): 5.33:1 light / 7.72:1 dark
+   at .85. It passes for 13px text, so .85 STAYS — the dimming is the card's
+   hierarchy against the 64px tally, and there was no contrast reason to spend
+   it. (The bare gradient top-stop figure is 3.66:1, but this line does not
+   render up there; do not "fix" it from that number alone.) */
 .hc-meta{font-size:13px;font-weight:600;opacity:.85;margin-top:16px}
+/* right-aligned like .cc-postit, and the .postit itself inherits the crew
+   cards' widened/rotated treatment further down this file */
+.hc-postit{display:flex;justify-content:flex-end;margin-top:14px}
+/* The hero avatar. Geometry, state ring and achievement frame all come from the
+   shared .avatar.cc-avatar rules in the crew block; only these two deltas are
+   teal-side, and both are required:
+   (1) a 3px near-white matte rim at the disc edge. The disc is --grad, which is
+       this slab's own gradient — 1.03:1 measured against the ground it sits on,
+       i.e. genuinely invisible without help. MEASURED off the real render with
+       the rim: 4.45:1 light / 6.80:1 dark against the slab outside it, and
+       6.51:1 / 6.35:1 against the disc inside it, so the chip has a boundary on
+       both sides in both themes. Reads as a photo mount, which is the right
+       note for a corkboard.
+   (2) the state ring steps from inset:-4px out to -7px to make room for it. At
+       -4px the ring's inner edge sits 1px off the disc and would paint straight
+       over the rim. Disc diameter is unchanged at 88px — same as a crew card's;
+       only the ring's offset differs. */
+.home-card .avatar.cc-avatar{box-shadow:0 0 0 3px rgba(255,252,245,.92)}
+.home-card .avatar.cc-avatar::after{inset:-7px}
 .hc-chips{display:flex;gap:8px;margin-top:14px}
 .hc-chip{flex:1;min-height:40px;border:1px solid rgba(255,252,245,.3);background:rgba(255,252,245,.14);border-radius:999px;
   font-family:Archivo,sans-serif;font-weight:800;font-size:15px;color:var(--on-accent);cursor:pointer;transition:transform .15s var(--ease-out),background .2s}
@@ -502,14 +549,19 @@ input, textarea{-webkit-user-select:text; user-select:text}
   background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.9),var(--ink) 65%);
   box-shadow:0 2px 4px rgba(var(--shadow-rgb),.4);z-index:2}
 .crew-card .cc-top{display:flex;align-items:center;gap:14px}
-.crew-card .avatar.cc-avatar{width:88px;height:88px;border-radius:50%;background:var(--grad);color:var(--on-accent);
+/* Descoped from `.crew-card .avatar.cc-avatar` (2026-10-01): #home-mycard now
+   draws the same chip, and duplicating eleven rules for it would guarantee the
+   two drift. `cc-avatar` is only ever put on this one kind of chip, so the
+   class alone is the honest selector; the hero's two deltas live up in the
+   .home-card block and win on specificity. */
+.avatar.cc-avatar{width:88px;height:88px;border-radius:50%;background:var(--grad);color:var(--on-accent);
   display:flex;align-items:center;justify-content:center;font-size:40px;flex:none;position:relative}
-.crew-card .avatar.cc-avatar::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:3px solid transparent;pointer-events:none}
-.crew-card .avatar.cc-avatar.st-met::after{border-color:var(--met)}
-.crew-card .avatar.cc-avatar.st-rest::after{border-color:var(--rest)}
-.crew-card .avatar.cc-avatar.st-excused::after{border-color:var(--excused)}
-.crew-card .avatar.cc-avatar.st-missed::after{border-color:var(--missed)}
-.crew-card .avatar.cc-avatar.st-pending::after{border-color:var(--pending);border-style:dashed}
+.avatar.cc-avatar::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:3px solid transparent;pointer-events:none}
+.avatar.cc-avatar.st-met::after{border-color:var(--met)}
+.avatar.cc-avatar.st-rest::after{border-color:var(--rest)}
+.avatar.cc-avatar.st-excused::after{border-color:var(--excused)}
+.avatar.cc-avatar.st-missed::after{border-color:var(--missed)}
+.avatar.cc-avatar.st-pending::after{border-color:var(--pending);border-style:dashed}
 .cc-info{flex:1;min-width:0}
 .cc-name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .crew-card .nm{font-family:Archivo,sans-serif;font-weight:800;font-size:19px;letter-spacing:-.01em}
@@ -522,7 +574,7 @@ input, textarea{-webkit-user-select:text; user-select:text}
 .strip{display:flex;gap:6px;margin-top:14px}
 .strip .cell{flex:1;height:9px}
 .cc-postit{display:flex;justify-content:flex-end;margin-top:14px}
-.crew-card .postit{position:static;width:auto;max-width:210px;font-size:20px;transform:rotate(2.5deg)}
+.crew-card .postit,.home-card .postit{position:static;width:auto;max-width:210px;font-size:20px;transform:rotate(2.5deg)}
 .crew-invite{margin:18px 22px 0;padding:16px;border:1px dashed var(--hair)}
 .crew-invite p{font-size:13.5px;color:var(--muted);margin-bottom:10px}
 
@@ -1499,11 +1551,11 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .postit::before{content:"";position:absolute;top:-6px;left:50%;width:11px;height:11px;margin-left:-5.5px;
   border-radius:50%;background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.9),var(--ink) 65%);
   box-shadow:0 2px 3px rgba(var(--shadow-rgb),.45);z-index:2}
-.postit.aged-1,.crew-card .postit.aged-1{
+.postit.aged-1,.crew-card .postit.aged-1,.home-card .postit.aged-1{
   transform:rotate(-7deg) scale(1.04);box-shadow:0 10px 24px rgba(var(--shadow-rgb),.2)}
-.postit.aged-2,.crew-card .postit.aged-2{
+.postit.aged-2,.crew-card .postit.aged-2,.home-card .postit.aged-2{
   transform:rotate(9deg) scale(1.09);box-shadow:0 13px 30px rgba(var(--shadow-rgb),.28)}
-.postit.aged-3,.crew-card .postit.aged-3{
+.postit.aged-3,.crew-card .postit.aged-3,.home-card .postit.aged-3{
   transform:rotate(-12deg) scale(1.15);box-shadow:0 16px 36px rgba(var(--shadow-rgb),.36)}
 .postit.aged-2::after,.postit.aged-3::after{content:"";position:absolute;top:-4px;right:22%;width:9px;height:9px;
   border-radius:50%;background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.9),var(--ink) 65%);
@@ -1893,12 +1945,12 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
    same weight fight, a beaded ring against a solid one does not. Volt because
    DESIGN.md rations it to reward moments and it appears in no day-state
    palette, so it can never be misread as a state. */
-.crew-card .avatar.cc-avatar.is-ach::before{content:"";position:absolute;inset:6px;
+.avatar.cc-avatar.is-ach::before{content:"";position:absolute;inset:6px;
   border-radius:50%;pointer-events:none;border:2.5px dotted var(--volt);opacity:.85}
-.crew-card .avatar.cc-avatar.is-ach .av{box-shadow:inset 0 0 0 2px rgba(199,244,100,.75);border-radius:50%}
+.avatar.cc-avatar.is-ach .av{box-shadow:inset 0 0 0 2px rgba(199,244,100,.75);border-radius:50%}
 /* the frame eats ~6px of the disc, so the glyph gives it back — without this
    the taller marks touch the inner ring */
-.crew-card .avatar.cc-avatar.is-ach .av svg{width:70%;height:70%}
+.avatar.cc-avatar.is-ach .av svg{width:70%;height:70%}
 
 /* earned marks in the picker, so the wardrobe reads as a collection */
 #set-avatars button.is-earned{position:relative}
