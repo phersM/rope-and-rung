@@ -383,6 +383,25 @@
         </span>
         <span class="form-card-chev" aria-hidden="true">›</span>
       </button>
+      <!-- "Another way up" — the alternative circuit. It belongs in this zone
+           for the same reason the board above it does: it is a REFERENCE, not a
+           thing to do. It records NOTHING — no set type, no logging, no
+           storage, nothing in it writes. Same card shell and same chevron as
+           "How we do them" so it reads as that card's sibling.
+
+           CLOSED BY DEFAULT, and that is the point, not a space saving: the
+           crew's day is pushups. This is here for the morning somebody's
+           shoulder hurts, so it has to be findable without being pushed at
+           everyone else. Filled and toggled by renderCircuit() in app.js. -->
+      <button id="circuit-toggle" class="form-card circuit-card" aria-expanded="false" aria-controls="circuit-panel">
+        <span class="circuit-thumb" aria-hidden="true"></span>
+        <span class="form-card-text">
+          <span class="form-card-title">Another way up</span>
+          <span class="form-card-sub">The same target, mostly off the shoulder</span>
+        </span>
+        <span class="form-card-chev" aria-hidden="true">›</span>
+      </button>
+      <div id="circuit-panel" class="circuit-panel hidden"></div>
     <div class="today-actions">
       <button id="rest-btn" class="btn btn-ghost"></button>
       <button id="excuse-btn" class="btn btn-ghost hidden">Write an excuse</button>

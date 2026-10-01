@@ -1516,6 +1516,51 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .form-card-sub{font-size:12.5px;line-height:1.4;color:var(--muted)}
 .form-card-chev{margin-left:auto;padding:0 4px;font-size:20px;line-height:1;color:var(--muted);opacity:.7}
 
+/* "Another way up" — the alternative circuit (T9). A REFERENCE SHEET: six
+   movements that come to the day's target, for the morning a shoulder hurts.
+   It records nothing.
+
+   It borrows .form-card wholesale rather than inventing a second card
+   treatment, so the only thing this block adds is the thumbnail tile, the
+   chevron's quarter-turn, and the panel underneath.
+
+   PALETTE: ink, paper and --muted only. Deliberately NO teal on the numbers or
+   the figures: --accent is #0F7A6D in both themes, and in dark mode that sits
+   on the #0B3B34 --card as dark-on-dark. Ink is the only value that holds in
+   both. No orange — none in this block, none in the SVGs (every figure is
+   stroke:currentColor), and none anywhere in this file (owner's standing ban,
+   CLAUDE.md + DESIGN.md). */
+.circuit-thumb{width:104px;height:84px;flex:none;display:flex;align-items:center;justify-content:center;
+  gap:1px;border-radius:var(--r-md);border:1px solid var(--hair);background:var(--chip-active-bg);
+  color:var(--ink);opacity:.8}
+.circuit-card .form-card-chev{transition:transform .2s var(--ease-out)}
+.circuit-card[aria-expanded="true"] .form-card-chev{transform:rotate(90deg)}
+/* open: the panel takes over the gap, so the card closes up against it and the
+   two read as one object rather than two stacked cards */
+.circuit-card[aria-expanded="true"]{margin-bottom:6px}
+
+.circuit-panel{width:calc(100% - 44px);margin:0 22px 12px;padding:13px 12px 11px;
+  background:var(--card);border:1px solid var(--hair);border-radius:var(--r-lg)}
+.circuit-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px 8px}
+.cx-item{display:flex;align-items:center;gap:8px;min-width:0}
+.cx-fig{flex:none;width:33px;height:33px;color:var(--ink);opacity:.75}
+.cx-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+/* mono, like every other number in this app. 500 is the heaviest JetBrains
+   Mono weight index.html actually loads — 600 would be a synthetic bold. */
+.cx-reps{font-family:"JetBrains Mono",monospace;font-weight:500;font-size:20px;line-height:1;color:var(--ink)}
+/* the labels are short, but "Tricep dips" at 375px has nowhere to go, so it
+   wraps rather than being clipped mid-word */
+.cx-label{font-size:11px;line-height:1.25;color:var(--muted)}
+.circuit-note{margin-top:12px;padding-top:10px;border-top:1px solid var(--hair);
+  font-size:12.5px;line-height:1.45;color:var(--muted)}
+.circuit-note strong{font-family:"JetBrains Mono",monospace;font-weight:500;color:var(--ink)}
+/* the figures, and the three in the closed card's tile. Same contract as the
+   avatars (.av svg): the art carries no colour and no stroke width of its own.
+   No animation — a reference sheet should sit still. */
+.circuit-thumb svg,.cx-fig svg{width:100%;height:100%;display:block;
+  fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.circuit-thumb svg{width:30px;height:30px}
+
 /* council polish round (Expansionist QoL, 2026-07-20) */
 /* dial: volt discharge each full revolution */
 .dial.discharge .ring{animation:voltflash .55s ease-out}

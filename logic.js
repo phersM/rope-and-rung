@@ -166,6 +166,124 @@ export function targetFor(day, settings = DEFAULT_SETTINGS) {
   return walkAt(s, Math.min(i, MAX_WALK_DAYS), from, legacyTarget(s, addDays(from, -1)));
 }
 
+// ---- the alternative circuit: six ways to the same number ----
+//
+// A REFERENCE, NOT A RECORD. Nothing here is logged, stored or scored; the Log
+// screen draws it and that is the end of it. It exists because a shoulder that
+// hurts, or a day you feel too weak for a big pushup set, should not read as
+// "miss the day" — five of the six movements never load the shoulder at all.
+// It is an option, never the default: push-ups stay on the list, and the sheet
+// is closed until somebody opens it.
+//
+// Order is fixed and push-ups are first on purpose — it is still a pushup pact.
+export const CIRCUIT_MOVES = [
+  { key: "pushups", label: "Push-ups" },
+  { key: "squats", label: "Squats" },
+  { key: "lunges", label: "Lunges" },
+  { key: "situps", label: "Sit-ups" },
+  { key: "dips", label: "Tricep dips" },
+  { key: "stepups", label: "Step-ups" },
+];
+
+// How far a single movement may sit from the mean (target / 6).
+const CIRCUIT_SPREAD = 0.15;
+
+// DETERMINISM, for the same reason targetFor() is deterministic: the crew talk
+// about the day's numbers out loud ("I did the 36 step-ups"), so every phone
+// must draw the same circuit. Seeded off the SAME hash helpers as the walk —
+// no Math.random, no Date.now, no dependence on call order.
+//
+// THE SUM IS EXACT BY CONSTRUCTION, not by a fix-up pass on the reps:
+//   1. target = 6q + r. Give r of the six slots q+1 and the rest q — that
+//      already sums to exactly the target, with no rounding anywhere.
+//   2. Add a deviation set that sums to ZERO. Adding zero cannot change a
+//      total, so the reps themselves never need a residual nudge and there is
+//      no path on which the six fail to add up.
+//   3. Shuffle which slot gets which, so neither the remainder nor the big
+//      numbers always land on the same movement.
+//
+// Every rep is >= 1 for the same structural reason: the deviation ceiling is
+// capped at q-1, so the smallest a slot can be is q - (q-1) = 1.
+export function circuitFor(day, settings = DEFAULT_SETTINGS) {
+  const s = { ...DEFAULT_SETTINGS, ...settings };
+  const n = CIRCUIT_MOVES.length;
+  const target = Math.round(Number(targetFor(day, s)));
+  // Six positive integers cannot sum to less than six. An admin can set the
+  // floor as low as 1, so this is reachable; there is no honest circuit to
+  // draw for it, so there is none, and the card hides itself.
+  if (!Number.isFinite(target) || target < n) return [];
+
+  const seed = String(s.target_seed) + "|circuit|" + String(day);
+  const q = Math.floor(target / n), r = target % n;
+
+  // At least 1 rep of variation so a small target is still a circuit rather
+  // than six identical numbers; never more than q-1, which is what keeps every
+  // movement >= 1.
+  // floor, not round: it keeps the deviation itself inside 15% of the mean
+  // rather than rounding up past it. The only slack left over is the sub-1
+  // wobble from target % 6, which no integer split can avoid.
+  const span = Math.min(Math.max(1, Math.floor(CIRCUIT_SPREAD * (target / n))), q - 1);
+  // Six INDEPENDENT deviations inside [-span, span], made to sum to zero.
+  //
+  // Two cheaper constructions were tried and rejected. Mirrored magnitudes
+  // ([+a,+b,+c,-c,-b,-a]) go bimodal when the magnitudes collide — three 28s and
+  // three 22s, which reads as machine-made. Greedily nudging free draws back to
+  // a zero sum collapses the spread, because the nudge always eats the biggest
+  // deviations first (2026-10-04 came out 29,28,28,28,29,28 that way).
+  //
+  // What works: de-mean, then SCALE back into the band. Subtracting the mean
+  // makes the set sum to zero; scaling by a single factor cannot disturb a zero
+  // sum, so it brings every draw inside [-span, span] without a clamp (a clamp
+  // would, and that is what breaks the total).
+  const raw = [0, 1, 2, 3, 4, 5].map((i) => (rnd(seed, i) * 2 - 1) * span);
+  const mean = raw.reduce((a, b) => a + b, 0) / n;
+  const centred = raw.map((x) => x - mean);
+  const widest = Math.max(...centred.map(Math.abs));
+  const fit = widest > span ? span / widest : 1;
+  const real = centred.map((x) => x * fit);            // sums to 0, all within the band
+
+  // Round to integers without losing the zero sum: floor everything, then hand
+  // the +1s to the biggest fractions. sum(real) is 0, so the floors are short by
+  // the sum of the fractions, which is a whole number in 0..5. Ties break by
+  // index, so it stays deterministic. A zero-fraction slot can never be picked
+  // (`short` is always below the count of non-zero fractions), which is what
+  // keeps every deviation inside the band after rounding.
+  const dev = real.map(Math.floor);
+  const short = -dev.reduce((a, b) => a + b, 0);
+  const byFrac = real.map((x, i) => ({ i, f: x - Math.floor(x) }))
+    .sort((a, b) => b.f - a.f || a.i - b.i);
+  for (let k = 0; k < short && k < n; k++) dev[byFrac[k].i]++;
+
+  // Six identical numbers are not a circuit. The draw can land flat (every
+  // deviation rounding to zero); when it does, tilt it from the seed.
+  if (span >= 1 && dev.every((d) => d === 0)) {
+    const a = 1 + Math.floor(rnd(seed, 7) * span);
+    const b = 1 + Math.floor(rnd(seed, 8) * span);
+    dev[0] = a; dev[1] = -a; dev[2] = b; dev[3] = -b;   // still sums to 0
+  }
+
+  // Fisher-Yates over the six slots, driven by the same seeded rnd.
+  const slot = [0, 1, 2, 3, 4, 5];
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rnd(seed, 10 + i) * (i + 1));
+    const t = slot[i]; slot[i] = slot[j]; slot[j] = t;
+  }
+
+  // The remainder's r spare reps go to the BIGGEST deviations, not to a fixed
+  // set of positions. Done by position, the bonus and the deviation cancel each
+  // other and the sheet flattens — 2027-03-10 (target 98) came out
+  // 16,16,16,16,17,17 that way. Riding the deviation widens the spread instead.
+  const bonus = new Array(n).fill(0);
+  dev.map((d, i) => ({ d, i }))
+    .sort((a, b) => b.d - a.d || a.i - b.i)
+    .slice(0, r)
+    .forEach(({ i }) => { bonus[i] = 1; });
+
+  const reps = new Array(n);
+  for (let k = 0; k < n; k++) reps[slot[k]] = q + bonus[k] + dev[k];
+  return CIRCUIT_MOVES.map((m, i) => ({ key: m.key, label: m.label, reps: reps[i] }));
+}
+
 // ---- stored-data version stamp (used by app.js on boot) ----
 //
 // Pure so it can be tested without localStorage: hand it the stamp it read, the

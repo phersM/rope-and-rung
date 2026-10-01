@@ -5,6 +5,7 @@ import {
   canDeclareRest, restsUsedInWeek, dayState, streak, weekStart, weeklySpoon, DEFAULT_SETTINGS,
   weeklyEagle, achievementUnlocks, currentAward, decideAvatar, wardrobe, unseenUnlocks,
   ACHIEVEMENTS, ACHIEVEMENT_BY_KEY, decideCelebrations, decideDataReset,
+  circuitFor,
 } from "./logic.js";
 import { makeAdapter, CODE_LENGTH, looksLikeCode } from "./data.js";
 
@@ -331,6 +332,50 @@ const AVATAR_ART = {
   // is the better, i like it". Do not swap in a body.
   goat: '<svg viewBox="0 0 48 48"><ellipse cx="10.5" cy="23.5" rx="5.6" ry="2.9" transform="rotate(22 10.5 23.5)" fill="currentColor" stroke="none"/><ellipse cx="37.5" cy="23.5" rx="5.6" ry="2.9" transform="rotate(-22 37.5 23.5)" fill="currentColor" stroke="none"/><path d="M18 11.5 C12 5 5 6.5 3 13.5"/><path d="M30 11.5 C36 5 43 6.5 45 13.5"/><path d="M13.5 22 C13.5 13.5 18 9.5 24 9.5 C30 9.5 34.5 13.5 34.5 22 L30.5 32 C30 35.5 26.5 37.5 24 37.5 C21.5 37.5 18 35.5 17.5 32 Z"/><circle cx="19" cy="21.5" r="2.1" fill="currentColor" stroke="none"/><circle cx="29" cy="21.5" r="2.1" fill="currentColor" stroke="none"/><path d="M21.8 30.5 H26.2" opacity=".55"/><g class="aa-goatBeard"><path d="M20.5 36 C19.5 40.5 21.5 42.5 24 45.5 C26.5 42.5 28.5 40.5 27.5 36"/></g></svg>',
 };
+
+// ---- exercise figures for the alternative circuit (T9) ----
+//
+// A SEPARATE MAP ON PURPOSE. These are NOT avatars: they are not in AVATAR_ART,
+// not in AVATARS, and nothing can select them, so there is no path by which a
+// tricep dip becomes somebody's mark. Keyed by CIRCUIT_MOVES key, so logic.js
+// names a movement and this names its drawing — one list, not two.
+//
+// Push-ups REUSES the shipped `pumper` rather than a second pushup drawing.
+// It keeps its `aa-pump` group, but the animation is scoped `.av svg .aa-pump`
+// and these render inside `.cx-fig`, so it comes out static — which is right:
+// this is a reference sheet, nothing on it should be moving. None of the five
+// new figures carries an animation hook at all.
+//
+// Drawn to design/achievement-icons/v2-house-rules.md and judged at render
+// size in both themes: one subject dead centre, 34-37 of the 48 units on the
+// dominant axis, stroke-only, no fill, no colour, stroke-width from CSS.
+// Clause 3 ("creatures are heads, never side-view stick bodies") governs
+// creatures; these are people, and the flagship human marks — `pumper`,
+// `runner`, `spring`, `zen` — are full side-view figures.
+// The faint ground line is `pumper`'s own convention: it is what separates a
+// squat from a person sitting, and a lunge from a person falling over.
+const EXERCISE_ART = {
+  pushups: AVATAR_ART.pumper,
+  // Hips BELOW the knees and arms straight out front — the one pose nothing
+  // else in the set can be mistaken for. Drawn level with the knees first and
+  // it read as kneeling.
+  squats: '<svg viewBox="0 0 48 48"><path d="M7 42 H41" opacity=".45"/><circle cx="18" cy="11" r="4.6"/><path d="M19 15.5 L15.5 30"/><path d="M19.5 18 L32 19.5"/><path d="M15.5 30 L29.5 28 L28 41.5"/><path d="M24 41.5 H32"/></svg>',
+  // Two right angles carry it: front shin vertical under a bent front knee,
+  // back knee near the floor with the shin running back along it. Without the
+  // low back knee this is just a person mid-stride.
+  lunges: '<svg viewBox="0 0 48 48"><path d="M6 42 H42" opacity=".45"/><circle cx="23" cy="10" r="4.6"/><path d="M23 14.5 V26"/><path d="M23 18 L20 27"/><path d="M23 26 L34 30 V41.5"/><path d="M23 26 L18 40 L9 41.5"/></svg>',
+  // Hips and heels both ON the mat, torso up at 45 deg, one arm reaching past
+  // the knees. Floating the hips above the line read as a person falling.
+  situps: '<svg viewBox="0 0 48 48"><path d="M6 42 H43" opacity=".45"/><circle cx="11" cy="19.5" r="4.8"/><path d="M14 24 L28 40.5"/><path d="M14.5 25.5 L23.5 31.5"/><path d="M28 40.5 L36 29 L41.5 40.5"/></svg>',
+  // The bench is two strokes, not a closed box — a box here would have been a
+  // second copy of the step-up's box and the two would read as one icon twice.
+  // The elbow sits ABOVE the hand, which is what makes it a dip and not a lean.
+  dips: '<svg viewBox="0 0 48 48"><path d="M6 42 H43" opacity=".45"/><path d="M29 23 H44"/><path d="M31.5 23 V40"/><circle cx="19" cy="12" r="4.6"/><path d="M19.5 16.5 L22 29"/><path d="M19.5 19 L30 17 L31 23"/><path d="M22 29 L11.5 32.5 L7 41.5"/></svg>',
+  // Here the box IS the subject cue, so it stays closed and solid-edged; the
+  // lead foot lands on its top corner and the trail leg runs to the floor.
+  stepups: '<svg viewBox="0 0 48 48"><path d="M6 42 H43" opacity=".45"/><path d="M28 30 H42 V42 H28 Z"/><circle cx="15" cy="10" r="4.6"/><path d="M15.5 14.5 L17 26"/><path d="M15 18 L21.5 24"/><path d="M17 26 L26 28 L29 30"/><path d="M17 26 L14 42"/></svg>',
+};
+
 // avatar value format: "art" or "art.colour" (per-person icon colour).
 // Keys are stable (stored profiles reference them by name) — only the hex
 // values changed 2026-07-23: blue/mustard/brick used to be byte-identical to
@@ -1234,10 +1279,64 @@ function renderDial() {
 
 // ---------- today ----------
 
+// "Another way up" — the day's alternative circuit.
+//
+// READ-ONLY, BY CONSTRUCTION. It calls circuitFor() and writes six numbers into
+// the DOM. There is no handler that banks anything, no set type, no adapter
+// call, nothing persisted — not even the open/closed state, which is why a
+// reload closes it again. If anything here ever needs to write, it has stopped
+// being this feature.
+function renderCircuit() {
+  const card = $("circuit-toggle"), panel = $("circuit-panel");
+  const moves = circuitFor(today(), state.settings);
+  // circuitFor returns nothing when the target is below six, because six
+  // positive integers cannot sum to less than that. Rather than draw a circuit
+  // that does not add up, there is no card.
+  if (moves.length !== 6) {
+    card.classList.add("hidden");
+    panel.classList.add("hidden");
+    card.setAttribute("aria-expanded", "false");
+    return;
+  }
+  card.classList.remove("hidden");
+
+  // Wired once: renderToday() runs on every bank, and a listener added each
+  // time would fire N times on the Nth tap.
+  if (!card.dataset.wired) {
+    card.dataset.wired = "1";
+    // The closed card's thumbnail sits where the form board's photo sits, so
+    // the two cards keep the same left edge and the same rhythm. Three of the
+    // figures, not a photo — there is no photograph of a circuit to use.
+    card.querySelector(".circuit-thumb").innerHTML =
+      ["squats", "situps", "stepups"].map((k) => EXERCISE_ART[k]).join("");
+    card.addEventListener("click", () => {
+      const open = card.getAttribute("aria-expanded") === "true";
+      card.setAttribute("aria-expanded", String(!open));
+      panel.classList.toggle("hidden", open);
+    });
+  }
+
+  // Re-rendered on every pass, which is safe: the panel holds no input and no
+  // state — open/closed lives on the button and on the panel's own class, and
+  // neither is touched here. It has to re-render, because a date override or an
+  // admin settings change moves the whole circuit.
+  const target = targetFor(today(), state.settings);
+  panel.innerHTML = `
+    <div class="circuit-grid">
+      ${moves.map((m) => `
+      <div class="cx-item">
+        <span class="cx-fig" aria-hidden="true">${EXERCISE_ART[m.key] || ""}</span>
+        <span class="cx-text"><span class="cx-reps">${m.reps}</span><span class="cx-label">${esc(m.label)}</span></span>
+      </div>`).join("")}
+    </div>
+    <p class="circuit-note">Any order, any split, any time today. The six come to <strong>${target}</strong> — the same as a straight pushup day.</p>`;
+}
+
 function renderToday() {
   renderDial();
   maybeShowDialHint();
   renderRope();
+  renderCircuit();
   const rows = state.sets
     .filter((s) => s.profile_id === state.me.id && s.day === today())
     .sort((a, b) => (a.logged_at < b.logged_at ? -1 : 1));

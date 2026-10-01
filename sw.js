@@ -1,10 +1,7 @@
 // Rope & Rung service worker — network-first with cache fallback.
 // Fresh when online, fully functional offline, instant shell loads.
-const CACHE = "pushpact-v19";  // v19: seeded random daily target from 12 Oct (fenced so
-                               //      nothing before it is re-judged), and your own card on
-                               //      the crew screen now matches everyone else's
-                               // (v4 shipped it in navy with a gold glint, matching
-                               //  neither the palette nor the launch screen)
+const CACHE = "pushpact-v20";  // v20: "Another way up" — six movements that add up to the same
+                               //      day's target, for shoulders that are complaining
 const SHELL = [
   "./", "index.html", "style.css", "app.js", "logic.js", "data.js",
   "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
