@@ -402,6 +402,19 @@
         <span class="form-card-chev" aria-hidden="true">›</span>
       </button>
       <div id="circuit-panel" class="circuit-panel hidden"></div>
+      <!-- Third card in the reference zone, same shell as the two above it. The
+           unlock popup names a mark and says what it was for, then it is gone —
+           after that the Settings picker shows WHAT you collected but never WHY,
+           so a mark you earned a fortnight ago is a mystery you are wearing. -->
+      <button id="marks-toggle" class="form-card marks-card hidden" aria-expanded="false" aria-controls="marks-panel">
+        <span class="marks-thumb" aria-hidden="true"></span>
+        <span class="form-card-text">
+          <span class="form-card-title">What you've earned</span>
+          <span class="form-card-sub" id="marks-sub"></span>
+        </span>
+        <span class="form-card-chev" aria-hidden="true">›</span>
+      </button>
+      <div id="marks-panel" class="marks-panel hidden"></div>
     <div class="today-actions">
       <button id="rest-btn" class="btn btn-ghost"></button>
       <button id="excuse-btn" class="btn btn-ghost hidden">Write an excuse</button>

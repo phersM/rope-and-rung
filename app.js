@@ -1285,6 +1285,81 @@ function renderDial() {
 
 // "Another way up" — the day's alternative circuit.
 //
+// ---------- what you've earned ----------
+//
+// READ-ONLY, like the circuit beside it. myUnlocks is already derived from the
+// log by refreshAwards(); this only reads it.
+//
+// The gap it fills: an unlock announces itself once, in a popup, and after that
+// the only trace is the mark in the Settings picker — which shows WHAT you
+// collected and never WHY. A fortnight later you are wearing something you
+// cannot explain. Every row here is the same mark / name / blurb the popup
+// showed, kept where you can go back to it.
+//
+// One row per achievement, not per unlock: repeatables (Money Bags, Early Bird)
+// fire again every time you earn them, so the list is keyed on the achievement
+// and carries a count instead of repeating itself down the page.
+function renderMarks() {
+  const card = $("marks-toggle"), panel = $("marks-panel");
+  if (!card || !panel) return;
+
+  const firstBy = new Map();   // key -> { at, times }
+  for (const u of myUnlocks) {
+    const seen = firstBy.get(u.key);
+    if (seen) { seen.times++; if (u.at < seen.at) seen.at = u.at; }
+    else firstBy.set(u.key, { at: u.at, times: 1 });
+  }
+  // Newest first: the one you just earned is the one you came here to read.
+  const rows = [...firstBy.entries()]
+    .filter(([key]) => ACHIEVEMENT_BY_KEY[key])
+    .sort((a, b) => b[1].at - a[1].at);
+
+  if (!rows.length) {
+    card.classList.add("hidden");
+    panel.classList.add("hidden");
+    card.setAttribute("aria-expanded", "false");
+    return;
+  }
+  card.classList.remove("hidden");
+  $("marks-sub").textContent =
+    rows.length === 1 ? "One mark, and what it was for" : `${rows.length} marks, and what each was for`;
+
+  if (!card.dataset.wired) {
+    card.dataset.wired = "1";
+    card.addEventListener("click", () => {
+      const open = card.getAttribute("aria-expanded") === "true";
+      card.setAttribute("aria-expanded", String(!open));
+      panel.classList.toggle("hidden", open);
+    });
+  }
+
+  // The newest three marks ride the closed card's thumbnail, where the form
+  // board's photo and the circuit's figures sit, so all three keep one rhythm.
+  card.querySelector(".marks-thumb").innerHTML = rows.slice(0, 3)
+    .map(([key]) => achievementArt(key)).filter(Boolean)
+    .map((art) => avatarHTML(art)).join("");
+
+  panel.innerHTML = rows.map(([key, { at, times }]) => {
+    const meta = ACHIEVEMENT_BY_KEY[key];
+    const art = achievementArt(key);
+    // Say the exception, not the rule. Nearly every mark is worn for 24 hours, so
+    // printing that on every row cost a line each and told you nothing — the two
+    // that behave differently are the ones worth naming.
+    const worn = meta.wear === "weekly" ? "Worn for the week \u00b7 "
+      : meta.wear === "until-clean-week" ? "Worn until a clean week \u00b7 "
+      : "";
+    const when = new Date(at).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+    return `<div class="unlock-row">
+      <span class="unlock-mark${art ? "" : " no-art"}">${art ? avatarHTML(art) : ""}</span>
+      <span class="unlock-copy">
+        <span class="unlock-name">${esc(meta.name)}${times > 1 ? ` <span class="marks-times">x${times}</span>` : ""}</span>
+        <span class="unlock-why">${esc(meta.blurb)}</span>
+        <span class="unlock-worn">${worn}${times > 1 ? "First earned" : "Earned"} ${esc(when)}</span>
+      </span>
+    </div>`;
+  }).join("");
+}
+
 // READ-ONLY, BY CONSTRUCTION. It calls circuitFor() and writes six numbers into
 // the DOM. There is no handler that banks anything, no set type, no adapter
 // call, nothing persisted — not even the open/closed state, which is why a
@@ -1341,6 +1416,7 @@ function renderToday() {
   maybeShowDialHint();
   renderRope();
   renderCircuit();
+  renderMarks();
   const rows = state.sets
     .filter((s) => s.profile_id === state.me.id && s.day === today())
     .sort((a, b) => (a.logged_at < b.logged_at ? -1 : 1));

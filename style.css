@@ -2156,6 +2156,17 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   @keyframes celebrateFade{from{opacity:0}to{opacity:1}}
 }
 
-}
-}
-}
+
+/* "What you've earned" is the circuit card's twin — same shell, same thumbnail
+   footprint, so the three reference cards keep one left edge and one rhythm.
+   The rows themselves are the unlock popup's own .unlock-row markup, reused
+   rather than restyled: the list and the popup say the same thing about the
+   same mark, so they should not be two different-looking things. */
+.marks-panel{width:calc(100% - 44px);margin:0 22px 12px;padding:13px 12px 11px;
+  background:var(--card);border:1px solid var(--hair);border-radius:var(--r-lg)}
+.marks-thumb{width:104px;height:84px;flex:none;display:flex;align-items:center;justify-content:center;
+  gap:1px;border-radius:var(--r-md);border:1px solid var(--hair);background:var(--chip-active-bg);
+  color:var(--ink);opacity:.8}
+.marks-panel .unlock-row + .unlock-row{margin-top:13px;padding-top:13px;border-top:1px solid var(--hair)}
+.marks-times{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.08em;opacity:.6;margin-left:4px}
