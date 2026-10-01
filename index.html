@@ -431,6 +431,32 @@
          to type into by accident. -->
     <p id="crew-name-plate" class="crew-name-plate hidden"></p>
     <div id="crew-cards"></div>
+    <!-- THE BOARD. A note is not a tally: nothing here counts toward anything,
+         it is the one place in the app for a word that isn't a number. Sits
+         between the member cards and the invite card because it belongs to the
+         crew you already have, not to the one you're recruiting.
+         Hidden whole in solo mode by applyMode() — a board with nobody to read
+         it is a notes app this app never promised (see app.js). -->
+    <section class="crew-board" id="crew-board">
+      <div class="l-title rope-title">On the board</div>
+      <div class="board-compose">
+        <!-- maxlength mirrors MAX_MESSAGE in data.js, which mirrors the
+             server's; app.js re-checks before sending, because maxlength is
+             not a guarantee (paste, autofill, a devtools poke). -->
+        <input id="board-input" type="text" class="board-input" maxlength="280"
+               autocomplete="off" enterkeyhint="send"
+               placeholder="Say something to the crew" aria-label="Write a note for the crew board">
+        <button id="board-send" class="btn-disc" aria-label="Put it on the board">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 13l5-5 5 5"/><path d="M8 4h8"/></svg>
+        </button>
+      </div>
+      <!-- A failed post keeps the typed words in the input and says so here,
+           rather than clearing the field and leaving the note nowhere.
+           flash() can't carry this message: the send control is an svg disc,
+           and flash() writes textContent. -->
+      <p id="board-err" class="err hidden"></p>
+      <div id="board-notes" class="board-notes"></div>
+    </section>
     <!-- title/body are rewritten by applyMode() in solo mode — instructions for
          a hand-off that cannot succeed are worse than none (see app.js). -->
     <div class="crew-invite">

@@ -596,6 +596,42 @@ input, textarea{-webkit-user-select:text; user-select:text}
 .strip .cell{flex:1;height:9px}
 .cc-postit{display:flex;justify-content:flex-end;margin-top:14px}
 .crew-card .postit,.home-card .postit{position:static;width:auto;max-width:210px;font-size:20px;transform:rotate(2.5deg)}
+
+/* the board — the crew's one non-numeric surface, sitting between the member
+   cards and the invite card. Slips of paper tacked under the corkboard: the
+   same card material, hairline and shadow .l-row and .crew-card use, and the
+   same small rotation jitter, so a note reads as pinned up rather than as a
+   row in a list. No new control species — the composer is the .ob-code-row
+   pairing (text field + .btn-disc) that the crew-code entry already uses.
+   Every colour here is a token, so dark mode follows without a second block. */
+.crew-board{margin:22px 22px 0}
+.board-compose{display:flex;gap:10px;align-items:center}
+.board-input{flex:1;min-width:0;padding:13px;border:1px solid var(--hair);border-radius:var(--r-sm);
+  background:rgba(var(--card-rgb),.78);font-family:"Instrument Sans",sans-serif;
+  font-weight:600;font-size:15px;color:var(--ink)}
+.board-input::placeholder{color:var(--muted);font-weight:500}
+.board-input:focus{outline:none;border-color:var(--accent)}
+.board-notes{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.board-note{background:rgba(var(--card-rgb),.78);border:1px solid var(--hair);padding:11px 13px;
+  border-radius:var(--r-sm);box-shadow:var(--shadow-card);cursor:pointer;
+  animation:rowIn .4s var(--ease-out) backwards;transition:transform .15s var(--ease-out)}
+.board-note:nth-child(odd){transform:rotate(-.4deg)}
+.board-note:nth-child(even){transform:rotate(.4deg)}
+.board-note:nth-child(2){animation-delay:.06s}.board-note:nth-child(3){animation-delay:.12s}.board-note:nth-child(4){animation-delay:.18s}
+.board-note:active{transform:scale(.985)}
+/* yours, alongside the "(you)" the name already carries — one accent edge, not
+   a second card style: the board is a conversation, not two kinds of object */
+.board-note.mine{border-left:3px solid var(--accent)}
+.bn-head{display:flex;align-items:baseline;gap:8px}
+.bn-who{font-family:Archivo,sans-serif;font-weight:800;font-size:14px;letter-spacing:-.01em;
+  min-width:0;overflow-wrap:anywhere}
+.bn-when{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:auto}
+/* overflow-wrap:anywhere, not word-break — a 280-character note with no spaces
+   in it (a pasted URL is the realistic case) must wrap inside the card instead
+   of pushing the whole Crew screen sideways at 375px. */
+.bn-body{font-size:15px;line-height:1.4;margin-top:5px;overflow-wrap:anywhere}
+.board-notes .l-empty{padding:2px 0 0}
+
 .crew-invite{margin:18px 22px 0;padding:16px;border:1px dashed var(--hair)}
 .crew-invite p{font-size:13.5px;color:var(--muted);margin-bottom:10px}
 

@@ -7,7 +7,7 @@ import {
   ACHIEVEMENTS, ACHIEVEMENT_BY_KEY, decideCelebrations, decideDataReset,
   circuitFor,
 } from "./logic.js";
-import { makeAdapter, CODE_LENGTH, looksLikeCode } from "./data.js";
+import { makeAdapter, CODE_LENGTH, looksLikeCode, MAX_MESSAGE, fmtAgo } from "./data.js";
 
 const $ = (id) => document.getElementById(id);
 const REPS_PER_REV = 20;            // one full revolution of the dial = 20 pushups
@@ -54,7 +54,7 @@ let dataWasReset = false;
 
 const state = {
   adapter: null, crew: null, me: null,
-  profiles: [], sets: [], statuses: [],
+  profiles: [], sets: [], statuses: [], messages: [],
   settings: { ...DEFAULT_SETTINGS },
   compose: 0, rotation: 0,
   histMonth: null, histPerson: null, histSelected: null,
@@ -181,6 +181,9 @@ async function loadCrew(crewId, profileId) {
   state.profiles = all.profiles;
   state.sets = all.sets;
   state.statuses = all.statuses;
+  // ?? [] both here and in refetch(): an older server's crew_bundle has no
+  // messages key at all, and the board must render empty rather than throw.
+  state.messages = all.messages ?? [];
   state.settings = { ...DEFAULT_SETTINGS, ...(all.crew.settings || {}) };
   state.me = state.profiles.find((p) => p.id === profileId) ?? null;
   if (!state.me) throw new Error("profile not found");
@@ -209,6 +212,7 @@ async function refetch() {
         const all = await state.adapter.fetchAll(state.crew.id);
         state.crew = all.crew; state.profiles = all.profiles;
         state.sets = all.sets; state.statuses = all.statuses;
+        state.messages = all.messages ?? [];
         state.settings = { ...DEFAULT_SETTINGS, ...(all.crew.settings || {}) };
         // re-point state.me at the fresh copy (not just the stale reference
         // from loadCrew) so a profile edit — or any other change to your own
@@ -1594,6 +1598,111 @@ function renderCrew() {
     '<div class="l-empty">Flying solo for now — that counts too. Invite a friend below.</div>';
 }
 
+// ---------- the board ----------
+// The crew's one surface that isn't a number. A note feeds no tally, no streak
+// and no award, and the server caps the board at 50 — a fridge door, not an
+// archive.
+//
+// SOLO MODE: hidden whole, the same way applyMode() hides the invite code and
+// the share button. A board is a conversation, and one person posting notes
+// into a localStorage nobody else can read is a different product — drawing it
+// would promise a crew that isn't there. LocalAdapter still implements
+// addMessage/removeMessage (data.js) so nothing can throw if the board is ever
+// reached in solo mode; the UI simply does not offer it.
+function renderBoard() {
+  const shared = !!state.adapter.shared;
+  $("crew-board").classList.toggle("hidden", !shared);
+  if (!shared || !state.me) return;
+
+  const nameOf = (pid) => state.profiles.find((p) => p.id === pid)?.name ?? "Someone";
+  // crew_bundle already hands the board back newest-first; sorted again here so
+  // the order is this renderer's own promise rather than an assumption about
+  // whichever adapter answered.
+  const notes = [...state.messages].sort((a, b) =>
+    (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+  // one clock reading for the whole pass, so two notes posted in the same
+  // second can't be formatted against two different "now"s
+  const now = Date.now();
+
+  // esc() on EVERY interpolation that came off the wire: the body and the
+  // author's name are both typed by a person, and the id goes in an attribute.
+  $("board-notes").innerHTML = notes.length
+    ? notes.map((m) => {
+        const mine = m.profile_id === state.me.id;
+        return `
+      <div class="board-note${mine ? " mine" : ""}" data-mid="${esc(m.id)}" title="Tap to take this down">
+        <div class="bn-head">
+          <span class="bn-who">${esc(nameOf(m.profile_id))}${mine ? " (you)" : ""}</span>
+          <span class="bn-when">${esc(fmtAgo(m.created_at, now))}</span>
+        </div>
+        <p class="bn-body">${esc(m.body)}</p>
+      </div>`;
+      }).join("")
+    : '<div class="l-empty">Nothing on the board. Say something — nobody else has.</div>';
+
+  $("board-notes").querySelectorAll(".board-note[data-mid]").forEach((el) =>
+    el.addEventListener("click", async () => {
+      const m = notes.find((x) => x.id === el.dataset.mid);
+      if (!m) return;
+      const mine = m.profile_id === state.me.id;
+      // Anyone in the crew may take anything down — the server's deliberate
+      // ruling. So the prompt names whose note it is: removing somebody
+      // else's is a thing you should know you are doing before you confirm.
+      const whose = mine ? "your note" : `${nameOf(m.profile_id)}'s note`;
+      if (!(await confirmSheet(`Take ${whose} off the board? It goes for everyone.`,
+        { confirmLabel: "Take it down", cancelLabel: "Leave it up" }))) return;
+      try {
+        await state.adapter.removeMessage(m.id);
+      } catch (e) {
+        console.warn("taking a note down failed", e);
+        boardErr("Couldn't take that down — try again in a moment.");
+      }
+      refetch();
+    }));
+}
+
+function boardErr(msg) {
+  const el = $("board-err");
+  el.textContent = msg ?? "";
+  el.classList.toggle("hidden", !msg);
+}
+
+async function postNote() {
+  const input = $("board-input");
+  const btn = $("board-send");
+  if (btn.disabled) return;           // a post is already in flight — ignore the re-tap
+  // maxlength on the input is a nicety, not a guarantee: a paste, an autofill
+  // or a poke at the DOM all get past it, and the server would simply refuse
+  // the call. Trimmed and clamped here so what we send is what it accepts.
+  const body = input.value.trim().slice(0, MAX_MESSAGE);
+  if (!body || !state.me) return;
+  boardErr(null);
+  btn.disabled = true;
+  try {
+    await state.adapter.addMessage(state.me.id, body);
+    input.value = "";                 // only on success — a failed post keeps the words
+    hapticTick(10);
+    await refetch();
+  } catch (e) {
+    console.warn("posting a note failed", e);
+    boardErr("Couldn't post that — your note is still here, try again.");
+  } finally {
+    btn.disabled = !input.value.trim();
+  }
+}
+
+$("board-send").addEventListener("click", postNote);
+// Enter sends, because a one-line input that needs a tap on a disc to commit
+// is the kind of thing people type into twice.
+$("board-input").addEventListener("keydown", (e) => { if (e.key === "Enter") postNote(); });
+// Nothing to post = dead disc, the same disabled look the Bank disc wears at
+// zero (.btn-disc:disabled).
+$("board-input").addEventListener("input", () => {
+  $("board-send").disabled = !$("board-input").value.trim();
+  boardErr(null);
+});
+$("board-send").disabled = true;
+
 function inviteLink() {
   return `${location.origin}${location.pathname}?code=${encodeURIComponent(state.crew.crew_code)}`;
 }
@@ -2278,7 +2387,7 @@ function renderAll() {
   // admin entry point only makes sense where the admin cards actually live
   $("menu-wrap").classList.toggle("hidden", state.screen !== "settings");
   if (state.screen === "today") renderToday();
-  if (state.screen === "crew") { renderHome(); renderCrew(); }
+  if (state.screen === "crew") { renderHome(); renderCrew(); renderBoard(); }
   if (state.screen === "history") renderHistory();
   if (state.screen === "settings") renderSettings();
   // last, so the panel opens over a screen that has finished drawing — and

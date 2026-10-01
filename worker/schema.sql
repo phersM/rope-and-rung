@@ -47,3 +47,16 @@ CREATE TABLE IF NOT EXISTS day_status (
   created_at  TEXT NOT NULL,
   UNIQUE (profile_id, day, kind)
 );
+
+-- The crew board: short notes the whole crew can see. Added 2026-10-01 to give
+-- the pact somewhere to talk, rather than a reminder nobody is in the room for.
+-- crew_id is denormalised alongside profile_id so the board survives a profile
+-- being removed, and so a crew's board is one indexed read.
+CREATE TABLE IF NOT EXISTS messages (
+  id         TEXT PRIMARY KEY,
+  crew_id    TEXT NOT NULL REFERENCES crews(id) ON DELETE CASCADE,
+  profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  body       TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS messages_crew_created ON messages (crew_id, created_at);

@@ -7,8 +7,9 @@
 // Interface: init(), findCrew(code), createCrew(defaults), resume(code,crewId),
 // listProfiles(crewId),
 // createProfile(crewId,name,avatar), updateProfile(profileId,name,avatar),
-// fetchAll(crewId) -> {sets,statuses,settings,crew},
+// fetchAll(crewId) -> {sets,statuses,messages,settings,crew},
 // addSet(profileId,day,reps), addStatus(row), removeStatus(profileId,day,kind),
+// addMessage(profileId,body), removeMessage(messageId),
 // saveSettings(crewId,settings,name), subscribe(crewId,cb)
 
 // randomUUID() is a secure-context API: it exists on https and on localhost,
@@ -41,10 +42,44 @@ export const newCrewCode = () =>
 export const looksLikeCode = (s) =>
   new RegExp(`^[${CODE_ALPHABET}]{${CODE_LENGTH}}$`).test(s);
 
+// The crew board's one shared limit. The server is the authority (MAX_MESSAGE
+// in worker/src/api.js), but the composer's maxlength, LocalAdapter's own clamp
+// and the app's pre-send check all have to agree with it or a note types fine
+// and then bounces off the API — so the number lives in exactly one place on
+// this side and everything reads it from here.
+export const MAX_MESSAGE = 280;
+
+// Relative time for a board note ("2h ago"). Display formatting, which would
+// normally sit beside fmtTime() in app.js — it lives here because data.js is
+// the only module of this app Node can import (app.js touches the DOM at load),
+// and an untested time formatter is exactly the thing that ships reading
+// "0m ago" or "-1m ago" at a boundary. `now` is injectable for the same reason.
+//
+// The steps coarsen as a note ages, and stop: past a week "43d ago" tells a
+// reader less than the date itself does, so it hands over to the date.
+export function fmtAgo(iso, now = Date.now()) {
+  const t = Date.parse(iso ?? "");
+  if (!Number.isFinite(t)) return "";
+  const s = Math.floor((now - t) / 1000);
+  // A phone whose clock runs a few seconds ahead of the server's must not
+  // render "-1m ago" on a note it just posted: anything not yet a minute old,
+  // future included, is simply now.
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  if (s < 7 * 86400) return `${Math.floor(s / 86400)}d ago`;
+  return new Date(t).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+}
+
 export class LocalAdapter {
   constructor() { this.key = "pushpact-local"; this.shared = false; }
   _db() {
-    return JSON.parse(localStorage.getItem(this.key) || '{"crews":[],"profiles":[],"sets":[],"statuses":[]}');
+    const db = JSON.parse(localStorage.getItem(this.key)
+      || '{"crews":[],"profiles":[],"sets":[],"statuses":[],"messages":[]}');
+    // a store written before the board existed has no messages array, and
+    // every method below assumes one is there to push onto
+    db.messages ??= [];
+    return db;
   }
   _save(db) { localStorage.setItem(this.key, JSON.stringify(db)); }
   async init() {}
@@ -78,6 +113,10 @@ export class LocalAdapter {
       crew, profiles,
       sets: db.sets.filter((s) => pids.has(s.profile_id)),
       statuses: db.statuses.filter((s) => pids.has(s.profile_id)),
+      // newest first, exactly as crew_bundle returns the board, so the
+      // renderer never has to care which adapter it is reading from
+      messages: db.messages.filter((m) => m.crew_id === crewId)
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0)),
     };
   }
   async addSet(profileId, day, reps) {
@@ -88,6 +127,29 @@ export class LocalAdapter {
   async addStatus(row) {
     const db = this._db();
     db.statuses.push({ id: uid(), created_at: new Date().toISOString(), ...row });
+    this._save(db);
+  }
+  // Solo mode has nobody to read the board, and the Crew screen hides it the
+  // same way it hides the invite code (see applyMode in app.js) — but these
+  // two exist all the same, so a board that is only hidden can never throw if
+  // anything reaches it, and a solo crew imported into a shared one keeps the
+  // same local shape as the rows the server would have returned.
+  async addMessage(profileId, body) {
+    const db = this._db();
+    const p = db.profiles.find((x) => x.id === profileId);
+    const row = {
+      id: uid(), crew_id: p?.crew_id ?? null, profile_id: profileId,
+      body: String(body ?? "").trim().slice(0, MAX_MESSAGE),
+      created_at: new Date().toISOString(),
+    };
+    db.messages.push(row); this._save(db); return row;
+  }
+  // Anyone in the crew may take down anything — the server's own ruling (see
+  // remove_message in worker/src/api.js), mirrored here so the two paths
+  // behave identically.
+  async removeMessage(messageId) {
+    const db = this._db();
+    db.messages = db.messages.filter((m) => m.id !== messageId);
     this._save(db);
   }
   async removeSet(setId) {
@@ -132,9 +194,16 @@ export class LocalAdapter {
 // exactly what we're told not to do). A two-person crew's whole bundle is a
 // few KB at most, so stringifying it every poll is not worth optimising
 // into something cleverer.
-function bundleSignature({ crew, profiles = [], sets = [], statuses = [] }) {
+//
+// messages is in here for a reason worth naming: it is the only part of the
+// bundle a crewmate changes without touching their own tally, so leaving it
+// out would have left the board visibly dead — a note posted on one phone
+// would not appear on the other until some unrelated change (a set, a rest,
+// a rename) happened to move the fingerprint.
+function bundleSignature({ crew, profiles = [], sets = [], statuses = [], messages = [] }) {
   const byId = (arr) => [...arr].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return JSON.stringify({ crew, profiles: byId(profiles), sets: byId(sets), statuses: byId(statuses) });
+  return JSON.stringify({ crew, profiles: byId(profiles), sets: byId(sets),
+                          statuses: byId(statuses), messages: byId(messages) });
 }
 
 // Two-person app, a set gets logged a handful of times a day: anything
@@ -188,7 +257,11 @@ class RpcAdapter {
   }
   async fetchAll(crewId) {
     const data = await this._rpc("crew_bundle", { p_code: this.code, p_crew_id: crewId });
-    return { crew: data.crew, profiles: data.profiles ?? [], sets: data.sets ?? [], statuses: data.statuses ?? [] };
+    // messages ?? [] is not decoration: a bundle from a server deployed before
+    // the board existed has no such key, and an undefined board would take the
+    // whole Crew screen down on the first .map()
+    return { crew: data.crew, profiles: data.profiles ?? [], sets: data.sets ?? [],
+             statuses: data.statuses ?? [], messages: data.messages ?? [] };
   }
   async addSet(profileId, day, reps) {
     await this._rpc("add_set",
@@ -199,6 +272,21 @@ class RpcAdapter {
       p_code: this.code, p_crew_id: this.crewId, p_profile_id: row.profile_id,
       p_day: row.day, p_kind: row.kind, p_excuse_text: row.excuse_text ?? null,
     });
+  }
+  // The board. profileId is passed in rather than held on the adapter for the
+  // same reason addSet() takes one: the adapter never tracks who is signed in
+  // (profiles can be switched), so the caller names the author.
+  async addMessage(profileId, body) {
+    return this._rpc("add_message", {
+      p_code: this.code, p_crew_id: this.crewId,
+      p_profile_id: profileId, p_body: body,
+    });
+  }
+  // No profile id and no ownership check by design — anyone in the crew may
+  // take down anything on the board (see remove_message in worker/src/api.js).
+  async removeMessage(messageId) {
+    await this._rpc("remove_message",
+      { p_code: this.code, p_crew_id: this.crewId, p_message_id: messageId });
   }
   async removeSet(setId) {
     await this._rpc("remove_set",

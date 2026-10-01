@@ -16,6 +16,7 @@ const CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_NAME = 40, MAX_AVATAR = 40, MAX_EXCUSE = 500, MAX_SETTINGS = 64 * 1024;
+const MAX_MESSAGE = 280, BOARD_LIMIT = 50;
 const MAX_BODY = 2 * 1024 * 1024;   // import_crew carries a whole solo history
 const MAX_IMPORT = { profiles: 50, sets: 10000, statuses: 5000 };
 const STAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
@@ -202,12 +203,18 @@ const PROCEDURES = {
   async crew_bundle(db, a) {
     const crew = await crewFor(db, a);
     const id = a.p_crew_id;
-    const [profiles, sets, statuses] = await db.batch([
+    const [profiles, sets, statuses, messages] = await db.batch([
       db.prepare("SELECT * FROM profiles WHERE crew_id = ?1 ORDER BY created_at").bind(id),
       db.prepare("SELECT s.* FROM sets s JOIN profiles p ON p.id = s.profile_id WHERE p.crew_id = ?1").bind(id),
       db.prepare("SELECT d.* FROM day_status d JOIN profiles p ON p.id = d.profile_id WHERE p.crew_id = ?1").bind(id),
+      // The board rides the bundle rather than a fetch of its own: the app already
+      // refetches this on mutation and on focus, so the board stays live for free.
+      // Newest first and capped — a crew that talks for a year must not turn every
+      // load into an unbounded download.
+      db.prepare("SELECT * FROM messages WHERE crew_id = ?1 ORDER BY created_at DESC LIMIT ?2").bind(id, BOARD_LIMIT),
     ]);
-    return { crew: crewOut(crew), profiles: profiles.results, sets: sets.results, statuses: statuses.results };
+    return { crew: crewOut(crew), profiles: profiles.results, sets: sets.results,
+             statuses: statuses.results, messages: messages.results };
   },
 
   async add_set(db, a) {
@@ -226,6 +233,28 @@ const PROCEDURES = {
        ON CONFLICT (profile_id, day, kind) DO UPDATE SET excuse_text = excluded.excuse_text
        RETURNING *`)
       .bind(crypto.randomUUID(), a.p_profile_id, day(a), kind(a), excuse, now()).first();
+  },
+
+  async add_message(db, a) {
+    await profileInCrew(db, a);
+    const body = str(a, "p_body", { max: MAX_MESSAGE });
+    return db.prepare(
+      `INSERT INTO messages (id, crew_id, profile_id, body, created_at)
+       VALUES (?1, ?2, ?3, ?4, ?5) RETURNING *`)
+      .bind(crypto.randomUUID(), a.p_crew_id, a.p_profile_id, body.trim(), now()).first();
+  },
+
+  // Anyone in the crew can take down anything on the board. A board of six
+  // friends does not need ownership rules, and the alternative — only the author
+  // may delete — leaves a bad note up forever if they stop opening the app.
+  async remove_message(db, a) {
+    const hit = await db.prepare(
+      `SELECT m.id FROM messages m JOIN crews c ON c.id = m.crew_id
+        WHERE c.id = ?1 AND c.crew_code = ?2 AND m.id = ?3`)
+      .bind(uuid(a, "p_crew_id"), code(a), uuid(a, "p_message_id")).first();
+    if (!hit) throw new Denied("invalid crew code or message");
+    await db.prepare("DELETE FROM messages WHERE id = ?1").bind(a.p_message_id).run();
+    return null;
   },
 
   async remove_set(db, a) {
