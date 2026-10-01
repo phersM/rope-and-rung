@@ -2354,7 +2354,6 @@ function renderHome() {
     .reduce((a, s) => a + s.reps, 0);
   // council: leading with "0 day streak" demotivates — show day-of-climb instead
   const dayN = Math.max(1, Math.floor((parseDay(today()) - parseDay(start)) / 86400000) + 1);
-  const weekPart = weekTotal > 0 ? ` · ${weekTotal} banked this week` : "";
   const streakLine = stk > 0 ? `${stk} day streak` : (today() < start ? "warm-up" : `day ${dayN} of the climb`);
   // council: warn the night before the target rises, never spring it
   const nudge = targetFor(addDays(today(), 1), state.settings) > st.target
@@ -2398,10 +2397,15 @@ function renderHome() {
       <div class="hc-info">
         <div class="hc-name-row">
           <span class="hc-nm">${esc(state.me.name)} (you)</span>
-          <span class="state-chip bg-${st.state}">${stateLabel(st)}</span>
+          <div class="hc-state">
+            <span class="state-chip bg-${st.state}">${stateLabel(st)}</span>
+            <span class="hc-week" aria-label="${weekTotal} banked so far this week">
+              <b>${weekTotal.toLocaleString()}</b><small>wk</small>
+            </span>
+          </div>
         </div>
         <div class="hc-nums"><span class="hc-tally">${st.tally}</span><span class="hc-of">/ ${st.target}</span></div>
-        <div class="hc-meta">${streakLine} · ${total.toLocaleString()} all-time${pb > 0 ? ` <span class="pb-badge">PB ${pb}</span>` : ""}${weekPart}${nudge}</div>
+        <div class="hc-meta">${streakLine} · ${total.toLocaleString()} all-time${pb > 0 ? ` <span class="pb-badge">PB ${pb}</span>` : ""}${nudge}</div>
       </div>
     </div>
     <!-- design council: static dial glyph removed here — aria-hidden, non-interactive,
