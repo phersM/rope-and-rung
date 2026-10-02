@@ -1299,6 +1299,13 @@ function renderDial() {
 // One row per achievement, not per unlock: repeatables (Money Bags, Early Bird)
 // fire again every time you earn them, so the list is keyed on the achievement
 // and carries a count instead of repeating itself down the page.
+// A mark for what you have not found yet. Drawn to the same contract as the
+// rest: one subject, dead centre, spanning 8->41 of the 48 units on its
+// dominant axis, stroke-only so it inherits weight and colour like every other
+// glyph. Deliberately a question, not a padlock — a padlock says "you are shut
+// out", a question says "there is something here".
+const MYSTERY_ART = '<svg viewBox="0 0 48 48"><path d="M16.5 18.5 C16.5 11.5 22 8 27.5 9.5 C33 11 35 16.5 32 21 C29.5 24.5 24 25.5 24 31"/><circle cx="24" cy="39" r="2.4" fill="currentColor" stroke="none"/></svg>';
+
 function renderMarks() {
   const card = $("marks-toggle"), panel = $("marks-panel");
   if (!card || !panel) return;
@@ -1339,6 +1346,15 @@ function renderMarks() {
     .map(([key]) => achievementArt(key)).filter(Boolean)
     .map((art) => avatarHTML(art)).join("");
 
+  // Everything not yet found, as mystery marks rather than named rows. Named
+  // rows would spoil them; eighteen greyed-out rows would be the padlock wall
+  // the design council warned off. A grid says "there are more" and nothing else.
+  // Comparative marks are dropped from the count in a crew of one, where they
+  // cannot fire at all — the same rule the rest of the app uses for them.
+  const soloCrew = state.profiles.length < 2;
+  const unfound = ACHIEVEMENTS.filter((a) =>
+    !firstBy.has(a.key) && !(soloCrew && a.comparative));
+
   panel.innerHTML = rows.map(([key, { at, times }]) => {
     const meta = ACHIEVEMENT_BY_KEY[key];
     const art = achievementArt(key);
@@ -1357,7 +1373,12 @@ function renderMarks() {
         <span class="unlock-worn">${worn}${times > 1 ? "First earned" : "Earned"} ${esc(when)}</span>
       </span>
     </div>`;
-  }).join("");
+  }).join("") + (unfound.length ? `
+    <div class="marks-unfound">
+      <span class="marks-unfound-head">${unfound.length} still to find</span>
+      <span class="marks-unfound-grid" aria-label="${unfound.length} achievements not yet earned">${
+        unfound.map(() => `<span class="marks-q">${MYSTERY_ART}</span>`).join("")}</span>
+    </div>` : "");
 }
 
 // READ-ONLY, BY CONSTRUCTION. It calls circuitFor() and writes six numbers into

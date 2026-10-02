@@ -2170,3 +2170,16 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .marks-panel .unlock-row + .unlock-row{margin-top:13px;padding-top:13px;border-top:1px solid var(--hair)}
 .marks-times{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;
   letter-spacing:.08em;opacity:.6;margin-left:4px}
+
+/* Not-yet-found marks. A grid of questions rather than named rows: naming them
+   spoils them, and eighteen greyed-out rows is the padlock wall the design
+   council warned off. Dimmed well below the earned rows so the eye lands on
+   what you have, then notices what you have not. */
+.marks-unfound{margin-top:14px;padding-top:13px;border-top:1px solid var(--hair)}
+.marks-unfound-head{display:block;font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.marks-unfound-grid{display:flex;flex-wrap:wrap;gap:8px}
+.marks-q{width:34px;height:34px;flex:none;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;border:1px dashed var(--hair);color:var(--muted);opacity:.65}
+.marks-q svg{width:62%;height:62%;fill:none;stroke:currentColor;stroke-width:3;
+  stroke-linecap:round;stroke-linejoin:round}
