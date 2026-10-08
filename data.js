@@ -71,6 +71,18 @@ export function fmtAgo(iso, now = Date.now()) {
   return new Date(t).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
+// A refusal the user should READ, as distinct from a transport failure whose
+// message ("Failed to fetch", "crew server error on add_set") is noise on a
+// screen. HttpRpcAdapter already marks the server's own noes with the 4xx
+// status it got back; LocalAdapter has no transport to carry a status, so it
+// marks its mirrored rulings with this flag instead. Callers in app.js show
+// the message when either marker is present and a generic line otherwise.
+function denied(message) {
+  const e = new Error(message);
+  e.denied = true;
+  return e;
+}
+
 export class LocalAdapter {
   constructor() { this.key = "pushpact-local"; this.shared = false; }
   _db() {
@@ -160,6 +172,29 @@ export class LocalAdapter {
   async removeStatus(profileId, day, kind) {
     const db = this._db();
     db.statuses = db.statuses.filter((s) => !(s.profile_id === profileId && s.day === day && s.kind === kind));
+    this._save(db);
+  }
+  // Taking someone out of the crew for good. Solo mode is a crew of one, so
+  // here this can only ever refuse — but it exists all the same, so the admin
+  // roster can never call an undefined method on a solo user's adapter, and it
+  // mirrors BOTH of the server's rulings (remove_profile in worker/src/api.js):
+  // the last member of a crew cannot go, because a crew with no profiles can
+  // never be signed in to again; and a profile that does go takes its sets, its
+  // rest days and excuses, and its board notes with it. D1 gets that cascade
+  // from foreign_keys being ON — localStorage has no constraints, so it is
+  // written out by hand here or solo would quietly keep orphan rows the shared
+  // path does not.
+  async removeProfile(profileId) {
+    const db = this._db();
+    const p = db.profiles.find((x) => x.id === profileId);
+    if (!p) throw denied("invalid crew code or profile");
+    if (db.profiles.filter((x) => x.crew_id === p.crew_id).length <= 1) {
+      throw denied("cannot remove the last member of a crew");
+    }
+    db.profiles = db.profiles.filter((x) => x.id !== profileId);
+    db.sets = db.sets.filter((s) => s.profile_id !== profileId);
+    db.statuses = db.statuses.filter((s) => s.profile_id !== profileId);
+    db.messages = db.messages.filter((m) => m.profile_id !== profileId);
     this._save(db);
   }
   async saveSettings(crewId, settings, name) {
@@ -295,6 +330,20 @@ class RpcAdapter {
   async removeStatus(profileId, day, kind) {
     await this._rpc("remove_status",
       { p_code: this.code, p_crew_id: this.crewId, p_profile_id: profileId, p_day: day, p_kind: kind });
+  }
+  // Taking someone out of the crew for good — an ADMIN action in the client,
+  // behind the same gate that guards renaming the crew. Shaped exactly like
+  // removeMessage above: no remover's id is sent, because the crew code is the
+  // whole credential and the server re-checks it against the crew id and the
+  // profile on every call (remove_profile in worker/src/api.js).
+  //
+  // Irreversible, and it reaches other rows: foreign_keys is ON in D1, so the
+  // profile takes its sets, its day_status rows and its board notes with it.
+  // The server refuses the LAST member of a crew — that refusal arrives as a
+  // 4xx whose message is worth showing the admin, not swallowing.
+  async removeProfile(profileId) {
+    await this._rpc("remove_profile",
+      { p_code: this.code, p_crew_id: this.crewId, p_profile_id: profileId });
   }
   async saveSettings(crewId, settings, name) {
     await this._rpc("save_settings",

@@ -597,6 +597,27 @@ input, textarea{-webkit-user-select:text; user-select:text}
 .cc-postit{display:flex;justify-content:flex-end;margin-top:14px}
 .crew-card .postit,.home-card .postit{position:static;width:auto;max-width:210px;font-size:20px;transform:rotate(2.5deg)}
 
+/* ---- the quiet collapse (2026-10-09) -------------------------------------
+   A member with no sign of life for a fortnight keeps their card, their place
+   in the list and their own mark — the card just stops holding a fortnight of
+   zeroes open. Same paper, same pin, same rotation jitter as every other card,
+   so it reads as the same object seen smaller, not as a different, lesser kind
+   of row. Deliberately NOT dimmed or greyed: this is not a telling-off, and a
+   faded card would say the opposite of what the collapse is for.
+   The chip drops to 42px (no state ring, no achievement frame — see
+   renderCrew()) and carries no hover/active/cursor affordance, because a
+   collapsed card does not expand: nothing in #crew-cards is tappable, and
+   making the quiet members the one exception would turn the collapse into a
+   thing to poke at. */
+.crew-card.is-quiet{padding:11px 18px}
+.crew-card.is-quiet .cc-top{gap:12px}
+.avatar.cq-avatar{width:42px;height:42px;border-radius:50%;background:var(--grad);color:var(--on-accent);
+  display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;position:relative}
+.crew-card.is-quiet .nm{font-size:16px}
+/* same size/weight/colour as .crew-card .sub — a line of fact, in the register
+   the stats line already speaks in, not a status chip and not a warning */
+.cq-note{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+
 /* the board — the crew's one non-numeric surface, sitting between the member
    cards and the invite card. Slips of paper tacked under the corkboard: the
    same card material, hairline and shadow .l-row and .crew-card use, and the
@@ -699,6 +720,25 @@ input, textarea{-webkit-user-select:text; user-select:text}
 .btn.danger{width:100%;margin-top:10px;color:var(--missed);border-color:rgba(178,58,46,.4)}
 .btn.danger:active{background:rgba(178,58,46,.08)}
 #sim-date-card #set-sim-clear,#state-dump-card #state-dump-refresh{width:100%;margin-top:10px}
+/* ---- admin: the crew roster (2026-10-09) --------------------------------
+   One row per member, in the bundle's own order. The remove is a compact ghost
+   button in the missed hue — the same visual language as "Erase all data on
+   this phone" above, because it is the same kind of irreversible. Your own row
+   carries the word "you" where the button would be, and NO button: a
+   greyed-out control that cannot fire is exactly the pattern the crew-name
+   field was deliberately not given (see index.html).
+   .btn.danger is width:100% for the danger zone's one stacked button, which
+   would make a roster into a stack of full-width blocks — undone here rather
+   than by loosening the shared rule. */
+.members-list{display:flex;flex-direction:column;margin-top:4px}
+.mem-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--hair)}
+.mem-row:last-child{border-bottom:none}
+.avatar.mem-avatar{width:32px;height:32px;border-radius:50%;background:var(--grad);color:var(--on-accent);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.mem-name{font-weight:700;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mem-you{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:500;font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);flex:none}
+.btn.danger.mem-remove{width:auto;margin-top:0;flex:none;padding:8px 14px;font-size:13px}
 .state-dump-pre{margin-top:10px;padding:10px;max-height:260px;overflow:auto;background:var(--paper);border:1px solid var(--hair);border-radius:var(--r-sm);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.5;color:var(--ink);white-space:pre-wrap;word-break:break-word}
 
 /* tabbar */

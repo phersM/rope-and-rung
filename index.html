@@ -584,6 +584,25 @@
       <p class="hint">Erases every crew, profile, and logged set stored on this phone — the app forgets everything and reopens to onboarding, fresh. Use this to wipe test data. This cannot be undone.</p>
       <button id="set-erase" class="btn btn-ghost danger">Erase all data on this phone</button>
     </div>
+    <!-- Removing a member. ADMIN-gated, behind the same code as renaming the
+         crew and the danger zone above, on the standing ruling that the crew's
+         shape is not something any member edits from the screen they read it
+         on — and taking out a PERSON is at least as big as renaming the crew.
+         It is also the only action in the app that reaches somebody else's
+         data for good: foreign_keys is ON in D1, so a removed profile takes
+         its sets, its rest days and excuses, and its board notes with it.
+         YOUR OWN ROW carries no remove control at all — not a greyed-out one
+         (see the crew-name note above for why this codebase does not ship
+         disabled controls that invite a dead tap). The server would happily
+         remove you, and the session would then be pointing at a profile that
+         no longer exists. The row itself stays, so the roster an admin reads
+         is the whole crew and the count is honest. -->
+    <div class="set-card hidden" id="members-card">
+      <div class="l-title">Crew members</div>
+      <p class="hint">For someone who has decided they are done. Everything they logged goes with them, and it cannot be undone.</p>
+      <div id="members-list" class="members-list"></div>
+      <p id="members-err" class="err hidden"></p>
+    </div>
     <!-- Celebration lines. Admin-gated because it is crew-wide copy, and stored
          in the crew settings jsonb so every member sees the same bank rather
          than each device inventing its own. One line per row; blank rows and

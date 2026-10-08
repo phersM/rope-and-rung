@@ -55,7 +55,11 @@ export const DEFAULT_SETTINGS = {
   // already clamped to max_daily_jump the reflected move stays inside that limit
   // too. The date exists ONLY to protect days already banked under the old
   // behaviour; a crew whose walk starts after it reflects from its first day.
-  walk_reflect_from: "2026-10-12",        // the Monday the walk starts
+  walk_reflect_from: "2026-10-12",
+  // A member with no sign of life for this many days has their crew card
+  // collapsed rather than removed. Nothing is deleted and nobody is told; the
+  // card springs back open the moment they log anything.
+  quiet_after_days: 14,        // the Monday the walk starts
 
   // THE PRE-walk_from MATHS. NOT DEAD — DO NOT REMOVE AGAIN.
   // targetFor() reads these for every day before walk_from, and the walk's own
@@ -1087,6 +1091,71 @@ export function achievementUnlocks({ sets, statuses, profiles, profileId, today,
   }
 
   return out.sort((a, b) => cmp(a.at, b.at) || cmp(a.seq, b.seq));
+}
+
+// ---- quiet members ----
+
+// Days since a member last showed any sign of life, measured from the LATER of
+// joining and their last activity. Without the joining date a member who signed
+// up this morning and has not logged yet would read as quiet since the epoch.
+// A status counts as much as a set: declaring a rest day or writing an excuse is
+// someone turning up, even though it banks nothing.
+export function quietDays({ profile, sets = [], statuses = [], today }) {
+  const id = String(profile?.id ?? "");
+  let last = typeof profile?.created_at === "string" ? profile.created_at.slice(0, 10) : null;
+  for (const r of sets) if (String(r.profile_id) === id && r.day > (last ?? "")) last = r.day;
+  for (const r of statuses) if (String(r.profile_id) === id && r.day > (last ?? "")) last = r.day;
+  if (!last) return 0;
+  const n = daysBetween(last, today);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+// Whose card collapses. Never your own — you are looking at the screen, so you
+// are plainly not gone, and collapsing the card of the person holding the phone
+// reads as the app telling them off.
+export function isQuiet({ profile, sets, statuses, today, settings = DEFAULT_SETTINGS, meId = null }) {
+  const s = { ...DEFAULT_SETTINGS, ...settings };
+  const after = Number(s.quiet_after_days);
+  if (!Number.isFinite(after) || after <= 0) return false;
+  if (meId != null && String(profile?.id) === String(meId)) return false;
+  return quietDays({ profile, sets, statuses, today }) >= after;
+}
+
+// ---- live crew order ----
+
+// Who sits where on the crew board today. Owner: "those that have an input sit
+// at the top and those that don't sit at the bottom, like a live ranking of
+// where they sit as a crew."
+//
+// The order, worst-to-best reading downward:
+//   1. everyone still climbing, most banked today first
+//   2. then anyone on nothing today, but who engaged with it — a declared rest
+//      day or a written excuse is a choice made in the app, not an absence, and
+//      the rest day is something the app GRANTS. Sinking someone to the bottom
+//      for taking the day it gave them would punish the mechanic.
+//   3. then anyone who simply has not shown up today
+//   4. then the quiet, whose cards are collapsed anyway
+//
+// Ties break on name then id, never on array order: this runs on every phone
+// independently, so an unstable sort would have two members seeing a different
+// crew order, and a re-render shuffling the board under the owner's thumb.
+export function rankCrew({ profiles = [], sets = [], statuses = [], today, settings = DEFAULT_SETTINGS, meId = null }) {
+  const s = { ...DEFAULT_SETTINGS, ...settings };
+  const score = (p) => {
+    const quiet = isQuiet({ profile: p, sets, statuses, today, settings: s, meId }) ? 1 : 0;
+    const tally = dayTally(sets, p.id, today);
+    const st = dayState({ sets, statuses, profileId: p.id, day: today, today, settings: s }).state;
+    const engaged = st === "rest" || st === "excused" ? 0 : 1;
+    return { quiet, tally, engaged, name: String(p.name ?? ""), id: String(p.id ?? "") };
+  };
+  return [...profiles].sort((a, b) => {
+    const x = score(a), y = score(b);
+    return x.quiet - y.quiet
+      || y.tally - x.tally
+      || x.engaged - y.engaged
+      || x.name.localeCompare(y.name)
+      || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0);
+  });
 }
 
 // ---- wear, supersession, wardrobe ----

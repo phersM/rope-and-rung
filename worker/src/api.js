@@ -235,6 +235,27 @@ const PROCEDURES = {
       .bind(crypto.randomUUID(), a.p_profile_id, day(a), kind(a), excuse, now()).first();
   },
 
+  // Taking someone out of the crew for good. An ADMIN job in the client (the
+  // same gate that guards renaming the crew and wiping a device), because unlike
+  // a board note this is not recoverable: foreign_keys is ON, so the profile
+  // takes its sets, its day_status rows and its board notes with it.
+  //
+  // The last member cannot be removed. A crew with no profiles is unreachable —
+  // nobody can sign in to it to undo anything — so it would be a crew deleted by
+  // accident, under a button that said "remove a member".
+  async remove_profile(db, a) {
+    const hit = await db.prepare(
+      `SELECT p.id FROM profiles p JOIN crews c ON c.id = p.crew_id
+        WHERE c.id = ?1 AND c.crew_code = ?2 AND p.id = ?3`)
+      .bind(uuid(a, "p_crew_id"), code(a), uuid(a, "p_profile_id")).first();
+    if (!hit) throw new Denied("invalid crew code or profile");
+    const { n } = await db.prepare("SELECT COUNT(*) AS n FROM profiles WHERE crew_id = ?1")
+      .bind(a.p_crew_id).first();
+    if (n <= 1) throw new Denied("cannot remove the last member of a crew");
+    await db.prepare("DELETE FROM profiles WHERE id = ?1").bind(a.p_profile_id).run();
+    return null;
+  },
+
   async add_message(db, a) {
     await profileInCrew(db, a);
     const body = str(a, "p_body", { max: MAX_MESSAGE });

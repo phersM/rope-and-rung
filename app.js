@@ -5,7 +5,7 @@ import {
   canDeclareRest, restsUsedInWeek, dayState, streak, weekStart, weeklySpoon, DEFAULT_SETTINGS,
   weeklyEagle, achievementUnlocks, currentAward, decideAvatar, wardrobe, unseenUnlocks,
   ACHIEVEMENTS, ACHIEVEMENT_BY_KEY, decideCelebrations, decideDataReset,
-  circuitFor,
+  circuitFor, quietDays, isQuiet, rankCrew,
 } from "./logic.js";
 import { makeAdapter, CODE_LENGTH, looksLikeCode, MAX_MESSAGE, fmtAgo } from "./data.js";
 
@@ -1639,6 +1639,10 @@ $("excuse-delete").addEventListener("click", async () => {
 // a 150px box tucked in the corner. Everything the old flat list showed is
 // still here: name/you-tag, streak+all-time+PB, today's tally, the 7-day
 // strip, data-pid — just laid out for the avatar to lead.
+//
+// 2026-10-09: a member who has shown no sign of life for quiet_after_days
+// collapses to a slim row instead (see the comment at the top of the map, and
+// isQuiet() in logic.js). The full card above is what everyone else still gets.
 function renderCrew() {
   // The crew's name, read-only. Hidden entirely in solo mode, where there is
   // no shared crew for a name to belong to. textContent, never innerHTML —
@@ -1652,8 +1656,50 @@ function renderCrew() {
   // sits directly above it and already shows your own day in more detail, so
   // leaving you in the map put the same person on one screen twice. Same
   // `mates` filter renderLedger() already uses for the mate post-it zone.
-  const mates = state.profiles.filter((p) => p.id !== state.me.id);
+  // Live order, not join order: most banked today at the top, the quiet at the
+  // bottom. Sorted through rankCrew() so every phone computes the same board.
+  const mates = rankCrew({
+    profiles: state.profiles.filter((p) => p.id !== state.me.id),
+    sets: state.sets, statuses: state.statuses, today: today(),
+    settings: state.settings, meId: state.me?.id,
+  });
   const cards = mates.map((p) => {
+    // THE QUIET COLLAPSE. A member with no sign of life for quiet_after_days
+    // (14) renders as a slim row instead of a full card — avatar, name, and how
+    // long it has been. Nothing is hidden, nothing is deleted, nobody is told,
+    // and they keep their place in the same list in the same order; the card
+    // just stops holding a fortnight of zeroes open. It exists so an
+    // eleven-person board where five have never started reads as quiet rather
+    // than as broken.
+    //
+    // Asked FRESH every render, straight off state.sets/state.statuses, and
+    // deliberately not memoised anywhere: that is the whole mechanism by which
+    // the card springs back to full size the instant they bank a set, declare a
+    // rest or write an excuse. Do not add a cache here.
+    //
+    // meId is passed so your own card can never collapse. renderCrew() already
+    // filters you out of `mates`, so this is belt and braces — but the two
+    // guards answer different questions (one is "the corkboard is other people",
+    // the other is "the app does not tell the person holding the phone they are
+    // gone"), and a later change to either must not be able to undo the other.
+    if (isQuiet({ profile: p, sets: state.sets, statuses: state.statuses,
+                  today: today(), settings: state.settings, meId: state.me?.id })) {
+      const qd = quietDays({ profile: p, sets: state.sets, statuses: state.statuses, today: today() });
+      // No state ring and no achievement frame on the chip: today's state is
+      // precisely the thing there is none of, and a dashed "pending" ring on a
+      // slim row would read as a prod. Not tappable either — see the .is-quiet
+      // note in style.css.
+      return `
+      <div class="crew-card is-quiet" data-pid="${p.id}">
+        <div class="cc-top">
+          ${avatarChip(wornAvatar(p), "cq-avatar")}
+          <div class="cc-info">
+            <div class="cc-name-row"><span class="nm">${esc(p.name)}</span></div>
+            <div class="cq-note">quiet for ${qd} day${qd === 1 ? "" : "s"}</div>
+          </div>
+        </div>
+      </div>`;
+    }
     const st = dayState({ sets: state.sets, statuses: state.statuses, profileId: p.id, day: today(), today: today(), settings: state.settings });
     const days = [...Array(7)].map((_, i) => addDays(today(), i - 6));
     const strip = days.map((d) => {
@@ -2099,6 +2145,11 @@ function renderSettings() {
   setAvatar = AVATARS.includes(curArt) ? curArt : "pumper";
   setColor = AVATAR_COLORS[curColor] ? curColor : "teal";
   renderProfilePicker();
+  // The admin roster reads state.profiles, so it has to follow a refetch — a
+  // member removed on another phone must not stay on this one's list. Only
+  // once the gate has actually been opened; before that the card is hidden and
+  // building rows into it every render would be work nobody can see.
+  if (!$("members-card").classList.contains("hidden")) renderMembersAdmin();
 }
 
 function renderProfilePicker() {
@@ -2179,6 +2230,92 @@ function num(id, min) { const v = parseInt($(id).value, 10); return Number.isFin
 
 $("set-switch").addEventListener("click", () => { session.clear(); location.reload(); });
 
+// ---------- admin: the crew roster ----------
+// "A remove for people that deem they no longer want to participate", tied to
+// the admin function on the owner's own instruction. Behind the same gate as
+// renaming the crew and the danger zone, and in Settings rather than on the
+// Crew tab, on the standing ruling that the crew's shape is not edited from the
+// screen it is read on.
+//
+// SELF-REMOVAL IS NOT OFFERED. Your row is listed — the roster an admin reads
+// should be the whole crew, or the count is wrong and the last-member rule
+// below makes no sense — but it renders no remove control at all. Not a
+// disabled one: this codebase swapped the crew-name input out for text rather
+// than grey it, for exactly the reason that a dead control invites a tap. The
+// handler re-checks the id anyway, so a list that has gone stale (a profile
+// switch between render and tap) still cannot aim this at yourself.
+//
+// The server would in fact remove you — it only refuses the LAST member — and
+// the session would then be pointing at a profile that no longer exists.
+function renderMembersAdmin() {
+  // Server order, untouched: crew_bundle hands profiles back in join order and
+  // re-sorting here would make the roster disagree with every other list.
+  $("members-list").innerHTML = state.profiles.map((p) => {
+    const mine = p.id === state.me?.id;
+    return `
+      <div class="mem-row${mine ? " is-me" : ""}">
+        ${avatarChip(p.avatar, "mem-avatar")}
+        <span class="mem-name">${esc(p.name)}</span>
+        ${mine
+          ? '<span class="mem-you">you</span>'
+          : `<button class="btn btn-ghost danger mem-remove" data-pid="${esc(p.id)}"
+               aria-label="Remove ${esc(p.name)} from the crew">Remove</button>`}
+      </div>`;
+  }).join("");
+
+  $("members-list").querySelectorAll("button.mem-remove[data-pid]").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      const p = state.profiles.find((x) => x.id === btn.dataset.pid);
+      if (!p || p.id === state.me?.id) return;   // the second of the two self-removal guards
+      memberErr(null);
+      // confirmSheet, never window.confirm — this app has none left. danger:true
+      // because this is the one action that destroys another person's history.
+      // The copy names them and says what goes, because "Remove Sam?" does not
+      // tell you that Sam's three hundred banked reps go with him.
+      const ok = await confirmSheet(
+        `Remove ${p.name} from the crew? Every rep they have banked, every rest day and excuse ` +
+        `they logged, and every note they left on the board goes with them. This cannot be undone.`,
+        { confirmLabel: "Remove them", cancelLabel: "Keep them", danger: true });
+      if (!ok) return;
+      btn.disabled = true;
+      try {
+        await state.adapter.removeProfile(p.id);
+      } catch (e) {
+        console.warn("removing a member failed", e);
+        // The server's refusals are rulings an admin needs to read — "cannot
+        // remove the last member of a crew" is reachable by pruning a crew down
+        // to one, and silently doing nothing would look like a broken button.
+        const said = refusalText(e);
+        memberErr(said
+          ? `Couldn't remove ${p.name} — ${said}.`
+          : `Couldn't remove ${p.name} — try again in a moment.`);
+        btn.disabled = false;
+        return;
+      }
+      // refetch() re-renders Settings (and the Crew screen behind it) off the
+      // fresh bundle, so the roster, the corkboard and every tally agree again
+      await refetch();
+      renderMembersAdmin();
+    }));
+}
+
+function memberErr(msg) {
+  const el = $("members-err");
+  el.textContent = msg ?? "";
+  el.classList.toggle("hidden", !msg);
+}
+
+// The words to show when a call comes back a no. A 4xx carries the server's own
+// sentence (HttpRpcAdapter puts the status on the error); LocalAdapter has no
+// transport, so it flags its mirrored rulings with `denied` instead. Anything
+// else — a 5xx, a TypeError from fetch — is "couldn't reach it", and its
+// message on screen is noise.
+function refusalText(e) {
+  if (e?.status >= 400 && e.status < 500 && e.message) return e.message;
+  if (e?.denied && e.message) return e.message;
+  return null;
+}
+
 // admin gate: hamburger menu -> "Admin" -> code prompt -> reveals the
 // admin cards in Settings (kept out of the way for everyday users; the
 // tiles stay hidden until unlocked). Same code as before, new entry point.
@@ -2203,8 +2340,10 @@ function tryAdminCode() {
     $("state-dump-card").classList.remove("hidden");
     $("affirm-card").classList.remove("hidden");
     $("icon-gallery-card").classList.remove("hidden");
+    $("members-card").classList.remove("hidden");
     renderAffirmEditor();
     renderIconGallery();
+    renderMembersAdmin();
     // renaming the crew joins the admin surface: text swaps to a live field
     $("set-crewname-row").classList.remove("hidden");
     $("set-crewname-read").classList.add("hidden");
