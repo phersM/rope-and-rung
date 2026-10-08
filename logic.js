@@ -45,7 +45,17 @@ export const DEFAULT_SETTINGS = {
   // ladder below, because the crew has already banked ~72 days of real history
   // against those numbers on the shared backend. Without this fence the walk
   // rewrites that history: 53 of those 72 banked days flip met -> missed.
-  walk_from: "2026-10-05",        // the Monday the walk starts
+  walk_from: "2026-10-05",
+  // Out-of-bounds excursions REFLECT off the floor/ceiling from this date on;
+  // before it they clamp. Clamping pins the walk to a bound and leaves it there
+  // until the noise happens to lift it off — measured on the live crew's
+  // settings, 15 of 84 days sat flat on the floor, in runs of up to four, which
+  // reads as "the app has reverted to 70". Reflection cannot sit: a step that
+  // would breach a bound comes back off it instead, and because the step is
+  // already clamped to max_daily_jump the reflected move stays inside that limit
+  // too. The date exists ONLY to protect days already banked under the old
+  // behaviour; a crew whose walk starts after it reflects from its first day.
+  walk_reflect_from: "2026-10-12",        // the Monday the walk starts
 
   // THE PRE-walk_from MATHS. NOT DEAD — DO NOT REMOVE AGAIN.
   // targetFor() reads these for every day before walk_from, and the walk's own
@@ -106,13 +116,28 @@ function walkAt(s, i, from, start) {
   const floor = Number(s.target_floor), ceiling = Number(s.target_ceiling);
   const maxJump = Number(s.max_daily_jump), bounce = Number(s.target_bounce);
   const centre = (floor + ceiling) / 2;
-  const key = walkKey(s, from, start);
+  // Index at which reflection takes over from clamping. A blank/invalid date
+  // means reflect from the start, which is what any crew without history wants.
+  const reflectAt = (() => {
+    const r = walkFromOf({ ...s, walk_from: s.walk_reflect_from });
+    if (r === null || !from) return 0;
+    const n = daysBetween(from, r);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  })();
+  const key = walkKey(s, from, start) + "\u0000" + reflectAt;
   if (walkCache.key !== key) { walkCache.key = key; walkCache.seq = []; walkCache.last = start; }
   const seq = walkCache.seq;
   for (let n = seq.length; n <= i; n++) {
     let d = (centre - walkCache.last) * bounce + (rnd(s.target_seed, n) * 2 - 1) * maxJump;
     d = clamp(d, -maxJump, maxJump);
-    walkCache.last = Math.round(clamp(walkCache.last + d, floor, ceiling));
+    let next = walkCache.last + d;
+    if (n >= reflectAt) {
+      // Fold the overshoot back inside rather than parking on the bound. The
+      // final clamp only catches an excursion deeper than the band is wide.
+      if (next < floor) next = floor + (floor - next);
+      if (next > ceiling) next = ceiling - (next - ceiling);
+    }
+    walkCache.last = Math.round(clamp(next, floor, ceiling));
     seq.push(walkCache.last);
   }
   return seq[i];
