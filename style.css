@@ -550,7 +550,9 @@ input, textarea{-webkit-user-select:text; user-select:text}
    .crew-invite), and as a bare child of the flex-column .screen it would
    render flush to the viewport edge, 22px out of line with the rest of the
    screen. Same 20px/22px step .home-crew used when this list lived on Home. */
-.crew-head{padding:20px 22px 0}
+/* The bell shares this title row, so the row became a flex pair. Nothing else
+   uses .crew-head. */
+.crew-head{padding:20px 22px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
 
 /* crew — the corkboard/fridge-door (Wave 4 rebuild): avatars are the
    dominant visual per member card, a coloured ring on the avatar reads
@@ -618,14 +620,15 @@ input, textarea{-webkit-user-select:text; user-select:text}
    the stats line already speaks in, not a status chip and not a warning */
 .cq-note{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
 
-/* the board — the crew's one non-numeric surface, sitting between the member
-   cards and the invite card. Slips of paper tacked under the corkboard: the
-   same card material, hairline and shadow .l-row and .crew-card use, and the
-   same small rotation jitter, so a note reads as pinned up rather than as a
-   row in a list. No new control species — the composer is the .ob-code-row
-   pairing (text field + .btn-disc) that the crew-code entry already uses.
+/* the board — the crew's one non-numeric surface. It no longer sits open on
+   the Crew screen: these rules now dress #board-panel behind the bell, and the
+   popup's rows reuse .bn-* below so an announced note and a stored one are the
+   same object seen twice. Slips of paper tacked under the corkboard: the same
+   card material, hairline and shadow .l-row and .crew-card use, and the same
+   small rotation jitter, so a note reads as pinned up rather than as a row in
+   a list. No new control species — the composer is the .ob-code-row pairing
+   (text field + .btn-disc) that the crew-code entry already uses.
    Every colour here is a token, so dark mode follows without a second block. */
-.crew-board{margin:22px 22px 0}
 .board-compose{display:flex;gap:10px;align-items:center}
 .board-input{flex:1;min-width:0;padding:13px;border:1px solid var(--hair);border-radius:var(--r-sm);
   background:rgba(var(--card-rgb),.78);font-family:"Instrument Sans",sans-serif;
@@ -652,6 +655,53 @@ input, textarea{-webkit-user-select:text; user-select:text}
    of pushing the whole Crew screen sideways at 375px. */
 .bn-body{font-size:15px;line-height:1.4;margin-top:5px;overflow-wrap:anywhere}
 .board-notes .l-empty{padding:2px 0 0}
+
+/* ---- the bell ---- */
+/* Same disc species as .form-close (38px, hairline ring, transparent well) so
+   it reads as a control this app already owns. The count rides the ring rather
+   than sitting beside it — a number inside the row would push "Keeping tabs"
+   around every time it changed width. */
+.crew-bell{position:relative;flex:none;width:38px;height:38px;border-radius:50%;
+  border:1.5px solid var(--hair);background:rgba(var(--card-rgb),.78);color:var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .15s var(--ease-out)}
+.crew-bell:active{transform:scale(.92)}
+.crew-bell svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+/* Accent teal, not volt: DESIGN.md rations volt to motion and reward moments,
+   and an unread count is neither. The paper-coloured ring punches it off the
+   bell's own hairline so the two circles never read as one smudge. */
+.crew-bell-count{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;
+  border-radius:999px;background:var(--accent);color:var(--on-accent);
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10px;font-weight:700;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 2px var(--paper);pointer-events:none}
+.crew-bell.has-unread{border-color:var(--accent)}
+
+/* ---- the board popup (the announcement) ----
+   Borrows .unlock-card whole — it IS the unlock panel's sibling, and a second
+   card recipe for the same job would be the thing to avoid. Only the rows are
+   its own, and those reuse .bn-head/.bn-who/.bn-when/.bn-body from the notes
+   themselves. No rotation jitter here: the corkboard tilt is what says "pinned
+   up on the board", and this is the moment before it gets there. */
+#board-popup{z-index:51}
+.board-pop-list{display:flex;flex-direction:column;gap:10px;margin:14px 0 16px}
+.board-pop-row{background:rgba(var(--card-rgb),.78);border:1px solid var(--hair);
+  border-left:3px solid var(--accent);border-radius:var(--r-sm);padding:11px 13px}
+.board-pop-more{font-size:12.5px;color:var(--muted);line-height:1.45;margin:0 0 16px}
+
+/* ---- the board panel (where notes live afterwards) ----
+   The "How we do them" sheet's shape: full-bleed overlay, one scrolling
+   column, head row with a close disc. Above the popup so that dismissing the
+   announcement and then opening the bell can never land you behind it. */
+#board-panel{z-index:52;align-items:flex-start;justify-content:center;overflow-y:auto;padding:0}
+.board-panel-inner{width:100%;max-width:560px;padding:22px 20px 40px;
+  display:flex;flex-direction:column;gap:14px}
+/* .board-notes brings its own margin-top for the Crew-screen layout it was
+   written for; inside a gap-spaced column that doubles the gap. */
+.board-panel-inner .board-notes{margin-top:0}
+.board-panel-foot{font-size:11px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);text-align:center;margin-top:4px}
 
 .crew-invite{margin:18px 22px 0;padding:16px;border:1px dashed var(--hair)}
 .crew-invite p{font-size:13.5px;color:var(--muted);margin-bottom:10px}
@@ -1009,7 +1059,12 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")}
 .overlay>*{margin-top:auto;margin-bottom:auto}
 #excuse-modal{background:rgba(var(--shadow-rgb),.45)}
-#confirm-modal{background:rgba(var(--shadow-rgb),.45)}
+/* Raised above the sheets it can be summoned from. It is reachable from inside
+   #board-panel (z-index 52) — tapping a note to take it down — and a confirm
+   sheet rendering BEHIND the panel that opened it is a dialog nobody can
+   answer. 93 keeps it over #form-sheet (92) too and under the celebration
+   (95), which is the one thing that may not be covered. */
+#confirm-modal{background:rgba(var(--shadow-rgb),.45);z-index:93}
 .ob-inner{width:100%;max-width:340px}
 
 /* ============ LAUNCH SCREEN — the Ascent lockup over the peak ============

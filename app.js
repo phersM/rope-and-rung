@@ -6,6 +6,7 @@ import {
   weeklyEagle, achievementUnlocks, currentAward, decideAvatar, wardrobe, unseenUnlocks,
   ACHIEVEMENTS, ACHIEVEMENT_BY_KEY, decideCelebrations, decideDataReset,
   circuitFor, quietDays, isQuiet, rankCrew,
+  unseenMessages, recentMessages, unreadCount,
 } from "./logic.js";
 import { makeAdapter, CODE_LENGTH, looksLikeCode, MAX_MESSAGE, fmtAgo } from "./data.js";
 
@@ -1751,21 +1752,41 @@ function renderCrew() {
 // into a localStorage nobody else can read is a different product — drawing it
 // would promise a crew that isn't there. LocalAdapter still implements
 // addMessage/removeMessage (data.js) so nothing can throw if the board is ever
-// reached in solo mode; the UI simply does not offer it.
+// reached in solo mode; the UI simply does not offer it. The gate used to be
+// the #crew-board section on the Crew screen; it is now the bell, which is the
+// only door into #board-panel — so hiding the bell hides the composer too.
 function renderBoard() {
   const shared = !!state.adapter.shared;
-  $("crew-board").classList.toggle("hidden", !shared);
-  if (!shared || !state.me) return;
+  $("crew-bell").classList.toggle("hidden", !shared);
+  if (!shared || !state.me) {
+    // A panel left open while the mode changes under it would be a composer
+    // posting into a board the app no longer offers.
+    $("board-panel").classList.add("hidden");
+    return;
+  }
 
   const nameOf = (pid) => state.profiles.find((p) => p.id === pid)?.name ?? "Someone";
-  // crew_bundle already hands the board back newest-first; sorted again here so
-  // the order is this renderer's own promise rather than an assumption about
-  // whichever adapter answered.
-  const notes = [...state.messages].sort((a, b) =>
-    (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
   // one clock reading for the whole pass, so two notes posted in the same
-  // second can't be formatted against two different "now"s
-  const now = Date.now();
+  // second can't be formatted against two different "now"s — and so the keep
+  // window below is measured against the same instant the stamps are.
+  const now = simNow();
+  // recentMessages(), not a local sort: the bell holds the keep window and
+  // nothing else. A note the badge could never have counted (unreadCount is
+  // already intersected with this same window) must not turn up in the list
+  // the badge points at, and a fortnight-old note must not come back.
+  const notes = recentMessages(state.messages, now, state.settings);
+
+  // The badge. unreadCount() is the one place that decides the number, so the
+  // bell cannot drift from the popup's idea of what is unseen.
+  const unread = unreadCount(state.messages, boardSeen(), state.me.id, now, state.settings);
+  const badge = $("crew-bell-count");
+  badge.textContent = unread > 9 ? "9+" : String(unread);
+  badge.classList.toggle("hidden", unread === 0);
+  $("crew-bell").classList.toggle("has-unread", unread > 0);
+  // The count is drawn, so it has to be said as well: a badge is invisible to
+  // a screen reader that only ever gets "Crew notes".
+  $("crew-bell").setAttribute("aria-label",
+    unread === 0 ? "Crew notes" : `Crew notes, ${unread} new`);
 
   // esc() on EVERY interpolation that came off the wire: the body and the
   // author's name are both typed by a person, and the id goes in an attribute.
@@ -1845,6 +1866,160 @@ $("board-input").addEventListener("input", () => {
   boardErr(null);
 });
 $("board-send").disabled = true;
+
+// ---------- the board's seen marker, the popup, and the panel ----------
+// The board stopped being an always-open section on the Crew screen. A note
+// now announces itself ONCE, in a popup, the next time you open the app; after
+// that it lives under the bell for board_keep_days and nothing nags you again.
+//
+// The marker is the same device the unlock panel uses, for the same reason:
+// it records what THIS PHONE has shown you, not a fact about the crew. Newest
+// shown created_at, as epoch ms, per profile. Nothing is written server-side —
+// "seen" is not a property of a note, it is a property of a pair of eyes, and
+// two people on one crew must not be able to mark each other's news read.
+const BOARD_SEEN_KEY = () => `pushpact-board-seen-${state.me?.id ?? "none"}`;
+
+// Storage can be unavailable (private mode) and renderBoard() runs inside
+// renderAll(), so a throw here would take the Crew screen down with it. No
+// marker means everything reads as unseen, which is the safe failure: you get
+// told again rather than never.
+function boardSeen() {
+  try { return Number(localStorage.getItem(BOARD_SEEN_KEY())) || 0; }
+  catch { return 0; }
+}
+
+// Same defensive parse logic.js uses on created_at: a row from an older
+// LocalAdapter store can lack one, and a NaN written into the marker would
+// make the marker itself useless forever.
+function noteAt(m) {
+  const t = Date.parse(m?.created_at ?? "");
+  return Number.isFinite(t) ? t : 0;
+}
+
+// Marks a whole batch seen by storing its NEWEST stamp — never a clock reading.
+// Using Date.now() here would swallow a note that landed in the same second
+// the popup was dismissed; using the newest note it actually covers means
+// anything that arrives afterwards is still, correctly, news.
+function markBoardSeen(batch) {
+  if (!batch?.length) return;
+  const newest = Math.max(...batch.map(noteAt));
+  if (!(newest > boardSeen())) return;
+  try { localStorage.setItem(BOARD_SEEN_KEY(), String(newest)); } catch { /* nothing to remember it with */ }
+}
+
+const noteAuthor = (pid) => state.profiles.find((p) => p.id === pid)?.name ?? "Someone";
+
+// A phone opening for the first time against a crew that has been talking for
+// a week would otherwise get a wall of cards it has to scroll. Show the most
+// recent few — and say so, because the rest are being marked read either way.
+const BOARD_POP_MAX = 4;
+
+// Once per app load. The owner asked for "a pop up on load of the app", and the
+// bell's badge is what carries anything that arrives while you are already in
+// there — a modal that reopens over you mid-session because somebody typed
+// something is a different, worse product.
+let boardPopupShown = false;
+// The exact batch the popup is accountable for, captured when it opened. NOT
+// recomputed on dismiss: a note that landed while the popup was up was never
+// announced, so it must stay unread and turn up on the bell.
+let boardPopupBatch = [];
+
+function renderBoardPopup() {
+  if (boardPopupShown) return;
+  if (!state.me || !state.adapter?.shared) return;
+  // THE QUEUE. Two popups can be due on the same open. They take turns rather
+  // than stacking: both are full-screen .overlay siblings, so showing both
+  // would leave one of them invisible behind the other and mark its contents
+  // read on the way past. The unlock panel goes first and is left exactly as
+  // it was — it still shows and still marks on sight — and its dismiss hands
+  // over to here (see the second listener on #unlock-dismiss). If the unlock
+  // panel is up, this render does nothing and does not latch.
+  if (!$("unlock-panel").classList.contains("hidden")) return;
+  if (!$("board-popup").classList.contains("hidden")) return;
+
+  const now = simNow();
+  const unseen = unseenMessages(state.messages, boardSeen(), state.me.id);
+  // Intersected with the keep window, exactly as unreadCount() is, so the
+  // popup can never announce something the bell would refuse to hold.
+  const live = new Set(recentMessages(state.messages, now, state.settings).map((m) => m.id));
+  const fresh = unseen.filter((m) => live.has(m.id));
+  if (!fresh.length) return;
+
+  const show = fresh.slice(-BOARD_POP_MAX);       // oldest-first already; keep the newest few
+  $("board-pop-list").innerHTML = show.map((m) => `
+    <div class="board-pop-row">
+      <div class="bn-head">
+        <span class="bn-who">${esc(noteAuthor(m.profile_id))}</span>
+        <span class="bn-when">${esc(fmtAgo(m.created_at, now))}</span>
+      </div>
+      <p class="bn-body">${esc(m.body)}</p>
+    </div>`).join("");
+
+  // Dismiss marks EVERYTHING unseen, not just what was displayed — the same
+  // ruling the unlock panel makes, so the skipped ones cannot queue up and
+  // reappear on the next load. Which means the skipped ones have to be owned
+  // up to rather than quietly binned.
+  const hidden = unseen.length - show.length;
+  const more = $("board-pop-more");
+  more.textContent = hidden > 0
+    ? `${hidden} older note${hidden === 1 ? "" : "s"} went straight under the bell.`
+    : "";
+  more.classList.toggle("hidden", hidden <= 0);
+
+  boardPopupBatch = unseen;
+  $("board-popup").classList.remove("hidden");
+  boardPopupShown = true;
+  hapticTick(24);
+}
+
+// Marked on dismiss, not on sight: the popup is the one announcement a note
+// gets, so closing the app without acknowledging it has to leave it waiting.
+$("board-pop-dismiss").addEventListener("click", () => {
+  $("board-popup").classList.add("hidden");
+  markBoardSeen(boardPopupBatch);
+  boardPopupBatch = [];
+  renderAll();                       // the badge the popup just emptied has to drop
+});
+
+// The second half of the queue. Its own listener, so the existing
+// unlock-dismiss handler is left exactly as it was — but deferred a tick
+// rather than relying on listener order: this block runs at module scope
+// BEFORE the unlock section does, so a direct call would ask to open while
+// the unlock panel it is waiting on is still on screen, and the queue would
+// stall with the news never shown (caught driving it, 2026-10-11). A timeout
+// runs after every handler on the click, whatever order they were added in.
+$("unlock-dismiss").addEventListener("click", () => setTimeout(renderBoardPopup, 0));
+
+// ---- the bell ----
+// Opening it counts as viewing, so the badge clears here and not on close: you
+// looked. The panel is also the only place the composer now lives.
+function openBoardPanel() {
+  if (!state.me || !state.adapter?.shared) return;
+  // A popup under the panel would be a dialog nobody can reach. It cannot be
+  // tapped through to the bell, but if it is up its batch is superseded by the
+  // broader mark below anyway.
+  $("board-popup").classList.add("hidden");
+  boardPopupBatch = [];
+  markBoardSeen(unseenMessages(state.messages, boardSeen(), state.me.id));
+  boardErr(null);
+  $("board-panel").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  renderBoard();                     // fills the list and drops the badge in one pass
+}
+function closeBoardPanel() {
+  $("board-panel").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+$("crew-bell").addEventListener("click", openBoardPanel);
+$("board-panel-close").addEventListener("click", closeBoardPanel);
+// Escape closes it, the way it closes the form sheet. Not while a confirm sheet
+// is up over it — Escape belongs to the top layer, and taking a note down puts
+// one there.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!$("confirm-modal").classList.contains("hidden")) return;
+  if (!$("board-panel").classList.contains("hidden")) closeBoardPanel();
+});
 
 function inviteLink() {
   return `${location.origin}${location.pathname}?code=${encodeURIComponent(state.crew.crew_code)}`;
@@ -2629,6 +2804,10 @@ function renderAll() {
   // last, so the panel opens over a screen that has finished drawing — and
   // after refreshAwards(), which is what fills myUnlocks
   renderUnlockPanel();
+  // ...and the board popup after THAT, because the two are queued, not
+  // stacked: this returns without latching while the unlock panel is up, and
+  // #unlock-dismiss calls it again on the way out.
+  renderBoardPopup();
 }
 
 // ---------- home dashboard ----------

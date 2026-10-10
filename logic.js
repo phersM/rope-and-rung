@@ -59,7 +59,9 @@ export const DEFAULT_SETTINGS = {
   // A member with no sign of life for this many days has their crew card
   // collapsed rather than removed. Nothing is deleted and nobody is told; the
   // card springs back open the moment they log anything.
-  quiet_after_days: 14,        // the Monday the walk starts
+  quiet_after_days: 14,
+  // How long a board note stays in the bell after it has been read once.
+  board_keep_days: 7,        // the Monday the walk starts
 
   // THE PRE-walk_from MATHS. NOT DEAD — DO NOT REMOVE AGAIN.
   // targetFor() reads these for every day before walk_from, and the walk's own
@@ -1091,6 +1093,47 @@ export function achievementUnlocks({ sets, statuses, profiles, profileId, today,
   }
 
   return out.sort((a, b) => cmp(a.at, b.at) || cmp(a.seq, b.seq));
+}
+
+// ---- the board, as notifications ----
+
+// created_at is an ISO string from the server. Parsed defensively because a row
+// can arrive from a LocalAdapter store written by an older build, and a NaN here
+// would silently sort every note to one end of the list.
+function msgAt(m) {
+  const t = Date.parse(m?.created_at ?? "");
+  return Number.isFinite(t) ? t : 0;
+}
+
+// What to pop up on open: notes this phone has not shown yet, oldest first.
+//
+// Your own notes are never unseen. You wrote it, you watched it appear — having
+// the app hand it back to you on the next load would read as a bug, and would
+// mean posting anything guaranteed you a popup.
+export function unseenMessages(messages = [], since = 0, meId = null) {
+  const mine = meId == null ? null : String(meId);
+  return [...messages]
+    .filter((m) => msgAt(m) > Number(since || 0) && (mine === null || String(m.profile_id) !== mine))
+    .sort((a, b) => msgAt(a) - msgAt(b));
+}
+
+// What the bell holds: everything still inside the keep window, newest first,
+// read or unread. The popup is the announcement; this is where it lives
+// afterwards, so it is deliberately NOT filtered by seen — a note you skimmed
+// at 6am is exactly the one you want to find again at lunchtime.
+export function recentMessages(messages = [], now = Date.now(), settings = DEFAULT_SETTINGS) {
+  const s = { ...DEFAULT_SETTINGS, ...settings };
+  const days = Number(s.board_keep_days);
+  const cutoff = Number.isFinite(days) && days > 0 ? now - days * 86400000 : -Infinity;
+  return [...messages]
+    .filter((m) => msgAt(m) >= cutoff)
+    .sort((a, b) => msgAt(b) - msgAt(a));
+}
+
+// The number on the bell.
+export function unreadCount(messages, since, meId, now = Date.now(), settings = DEFAULT_SETTINGS) {
+  const live = new Set(recentMessages(messages, now, settings).map((m) => m.id));
+  return unseenMessages(messages, since, meId).filter((m) => live.has(m.id)).length;
 }
 
 // ---- quiet members ----

@@ -436,7 +436,23 @@
         <div class="ws-days" id="ws-days"></div>
       </div>
     </div>
-    <div class="crew-head"><div class="l-title rope-title">Keeping tabs</div></div>
+    <!-- The bell sits in this title row, which puts it above #crew-name-plate
+         and above #crew-cards in both the DOM and the eye — a notification
+         control belongs over the crew it concerns, not under it. The board is
+         no longer an open section on this screen: new notes announce
+         themselves once in #board-popup when the app opens, then live behind
+         this button for board_keep_days (7). Hidden whole in solo mode by
+         renderBoard(), which is also what hides the composer — the only way
+         into #board-panel is through here. -->
+    <div class="crew-head">
+      <div class="l-title rope-title">Keeping tabs</div>
+      <!-- aria-label is rewritten with the count by renderBoard(); this is the
+           no-unread wording. -->
+      <button id="crew-bell" class="crew-bell hidden" aria-label="Crew notes">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 16.5V11a6.5 6.5 0 0 0-13 0v5.5L4 19h16l-1.5-2.5Z"/><path d="M9.8 19.5a2.2 2.2 0 0 0 4.4 0"/></svg>
+        <span id="crew-bell-count" class="crew-bell-count hidden"></span>
+      </button>
+    </div>
     <!-- The crew's name, read-only for everyone here by owner ruling: renaming
          the crew is an admin job, not something any member can do from the
          screen they read it on. The editable field lives in Settings behind
@@ -444,32 +460,10 @@
          to type into by accident. -->
     <p id="crew-name-plate" class="crew-name-plate hidden"></p>
     <div id="crew-cards"></div>
-    <!-- THE BOARD. A note is not a tally: nothing here counts toward anything,
-         it is the one place in the app for a word that isn't a number. Sits
-         between the member cards and the invite card because it belongs to the
-         crew you already have, not to the one you're recruiting.
-         Hidden whole in solo mode by applyMode() — a board with nobody to read
-         it is a notes app this app never promised (see app.js). -->
-    <section class="crew-board" id="crew-board">
-      <div class="l-title rope-title">On the board</div>
-      <div class="board-compose">
-        <!-- maxlength mirrors MAX_MESSAGE in data.js, which mirrors the
-             server's; app.js re-checks before sending, because maxlength is
-             not a guarantee (paste, autofill, a devtools poke). -->
-        <input id="board-input" type="text" class="board-input" maxlength="280"
-               autocomplete="off" enterkeyhint="send"
-               placeholder="Say something to the crew" aria-label="Write a note for the crew board">
-        <button id="board-send" class="btn-disc" aria-label="Put it on the board">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 13l5-5 5 5"/><path d="M8 4h8"/></svg>
-        </button>
-      </div>
-      <!-- A failed post keeps the typed words in the input and says so here,
-           rather than clearing the field and leaving the note nowhere.
-           flash() can't carry this message: the send control is an svg disc,
-           and flash() writes textContent. -->
-      <p id="board-err" class="err hidden"></p>
-      <div id="board-notes" class="board-notes"></div>
-    </section>
+    <!-- THE BOARD used to sit here, between the cards and the invite. It now
+         lives in #board-panel behind the bell above — composer and all. The
+         composer went with it on purpose: a "say something" box left on this
+         screen would post into a place you can no longer see. -->
     <!-- title/body are rewritten by applyMode() in solo mode — instructions for
          a hand-off that cannot succeed are worse than none (see app.js). -->
     <div class="crew-invite">
@@ -709,6 +703,62 @@
     <div class="l-title" id="unlock-title">Unlocked</div>
     <div id="unlock-list" class="unlock-list"></div>
     <button id="unlock-dismiss" class="btn btn-primary">Got it</button>
+  </div>
+</div>
+
+<!-- BOARD POPUP — the announcement.
+     Deliberately the unlock panel's sibling, not a second species of popup:
+     same .overlay shell, the same .unlock-card material, the same single
+     "Got it" out. Only the rows differ, because what is being announced is
+     somebody's sentence rather than a mark you earned.
+     Stacking: #unlock-panel 50 < #board-popup 51 < #board-panel 52. The queue
+     in app.js is what actually stops two popups being up at once (the board
+     popup refuses to open while the unlock panel is visible, and the unlock
+     panel's dismiss hands over to it); the z-index order is the belt to that
+     braces, so if the two ever did overlap the later arrival is the one you
+     can see rather than one sitting invisibly on top of the other. -->
+<div id="board-popup" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="board-popup-title">
+  <div class="unlock-card">
+    <div class="l-title" id="board-popup-title">New on the board</div>
+    <div id="board-pop-list" class="board-pop-list"></div>
+    <!-- Said out loud when the popup showed fewer than it marked seen: a phone
+         opening for the first time against a long-running crew must not get a
+         wall, and must not be quietly lied to about it either. -->
+    <p id="board-pop-more" class="board-pop-more hidden"></p>
+    <button id="board-pop-dismiss" class="btn btn-primary">Got it</button>
+  </div>
+</div>
+
+<!-- BOARD PANEL — where the notes live after their one announcement, for
+     board_keep_days. Reached only from the bell on the Crew screen, which is
+     also the solo-mode gate: no bell, no way in.
+     The composer moved in here with the notes. Head row reuses .form-head /
+     .form-close from the "How we do them" sheet rather than inventing a third
+     close control. -->
+<div id="board-panel" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="board-panel-title">
+  <div class="board-panel-inner">
+    <div class="form-head">
+      <div class="l-title rope-title" id="board-panel-title">On the board</div>
+      <button id="board-panel-close" class="form-close" aria-label="Close">✕</button>
+    </div>
+    <div class="board-compose">
+      <!-- maxlength mirrors MAX_MESSAGE in data.js, which mirrors the
+           server's; app.js re-checks before sending, because maxlength is
+           not a guarantee (paste, autofill, a devtools poke). -->
+      <input id="board-input" type="text" class="board-input" maxlength="280"
+             autocomplete="off" enterkeyhint="send"
+             placeholder="Say something to the crew" aria-label="Write a note for the crew board">
+      <button id="board-send" class="btn-disc" aria-label="Put it on the board">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 13l5-5 5 5"/><path d="M8 4h8"/></svg>
+      </button>
+    </div>
+    <!-- A failed post keeps the typed words in the input and says so here,
+         rather than clearing the field and leaving the note nowhere.
+         flash() can't carry this message: the send control is an svg disc,
+         and flash() writes textContent. -->
+    <p id="board-err" class="err hidden"></p>
+    <div id="board-notes" class="board-notes"></div>
+    <p class="board-panel-foot">Notes clear themselves after a week.</p>
   </div>
 </div>
 
