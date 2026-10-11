@@ -447,9 +447,14 @@
     <div class="crew-head">
       <div class="l-title rope-title">Keeping tabs</div>
       <!-- aria-label is rewritten with the count by renderBoard(); this is the
-           no-unread wording. -->
+           no-unread wording. It must keep CONTAINING the visible word "Notes"
+           (WCAG 2.5.3): a voice-control user says what they can see.
+           The word is not decoration. A bare bell disc is a thing you have to
+           be TOLD about — the crew read it as chrome and never tapped it, and
+           a board nobody opens is a board nobody writes to. -->
       <button id="crew-bell" class="crew-bell hidden" aria-label="Crew notes">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 16.5V11a6.5 6.5 0 0 0-13 0v5.5L4 19h16l-1.5-2.5Z"/><path d="M9.8 19.5a2.2 2.2 0 0 0 4.4 0"/></svg>
+        <span class="cb-label">Notes</span>
         <span id="crew-bell-count" class="crew-bell-count hidden"></span>
       </button>
     </div>
