@@ -34,3 +34,4 @@ PUBLISH.md
 
 # Cloudflare local dev state (the API itself, worker/, is committed)
 worker/.wrangler/
+.wrangler/
