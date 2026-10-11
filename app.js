@@ -1758,6 +1758,10 @@ function renderCrew() {
 function renderBoard() {
   const shared = !!state.adapter.shared;
   $("crew-bell").classList.toggle("hidden", !shared);
+  // The bell is the read side of the board; this row is the only unprompted
+  // way IN to the composer, so it lives and dies with the board itself —
+  // and it needs a profile as well as a crew, since it posts as you.
+  $("board-prompt").classList.toggle("hidden", !shared || !state.me);
   if (!shared || !state.me) {
     // A panel left open while the mode changes under it would be a composer
     // posting into a board the app no longer offers.
@@ -2011,6 +2015,14 @@ function closeBoardPanel() {
   document.body.style.overflow = "";
 }
 $("crew-bell").addEventListener("click", openBoardPanel);
+// Writing is one tap from the crew screen. Deliberately the SAME panel the bell
+// opens, not a second composer: two inputs for one board is two things to keep
+// in sync, and the sender needs to watch the note land anyway. openBoardPanel()
+// also clears the unread mark, which is correct — you are looking at the board.
+$("board-prompt").addEventListener("click", () => {
+  openBoardPanel();
+  $("board-input").focus();
+});
 $("board-panel-close").addEventListener("click", closeBoardPanel);
 // Escape closes it, the way it closes the form sheet. Not while a confirm sheet
 // is up over it — Escape belongs to the top layer, and taking a note down puts

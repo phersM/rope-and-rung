@@ -2304,3 +2304,21 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
   border-radius:50%;border:1px dashed var(--hair);color:var(--muted);opacity:.65}
 .marks-q svg{width:62%;height:62%;fill:none;stroke:currentColor;stroke-width:3;
   stroke-linecap:round;stroke-linejoin:round}
+
+/* "Say something to the crew" — a tappable line, not an open input.
+   The council's objection to an always-open empty field on this screen: with
+   most of the crew not yet started it reads as a standing monument to silence,
+   and a blank box with no prompt is intimidating rather than inviting. A line
+   with words in it asks a question; an empty field demands an answer.
+   Quiet by construction — dashed hairline, muted text, no fill — so it sits
+   under the bell without competing with the crew cards below it. */
+.board-prompt{display:flex;align-items:center;gap:10px;width:calc(100% - 44px);
+  margin:0 22px 14px;padding:11px 14px;border:1.5px dashed var(--hair);
+  border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;
+  font-family:inherit;font-size:14px;text-align:left;
+  transition:border-color .2s,color .2s,transform .15s var(--ease-out)}
+.board-prompt:active{transform:scale(.985)}
+.board-prompt:hover{border-color:var(--accent);color:var(--ink)}
+.bp-icon{display:inline-flex;flex:none}
+.bp-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}

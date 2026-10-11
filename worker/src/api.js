@@ -19,6 +19,21 @@ const MAX_NAME = 40, MAX_AVATAR = 40, MAX_EXCUSE = 500, MAX_SETTINGS = 64 * 1024
 const MAX_MESSAGE = 280, BOARD_LIMIT = 50;
 const MAX_BODY = 2 * 1024 * 1024;   // import_crew carries a whole solo history
 const MAX_IMPORT = { profiles: 50, sets: 10000, statuses: 5000 };
+// create_crew and import_crew are the only calls that need no credential, and
+// the rate limiter that was meant to guard them never ran: it is behind
+// `if (env.OPEN_CALLS)` and that binding does not exist on Pages. So the ceiling
+// has to live in the procedures themselves. Without it anyone who finds the API
+// URL can mint crews until D1's free 500 MB is gone, at which point the REAL
+// crew's writes start failing — the damage is not to the attacker's rows, it is
+// that eleven people stop being able to log pushups.
+// MAX_CREWS is deliberately low and deliberately not a real number of friends:
+// raise it when there are genuinely that many crews, which is a one-line deploy.
+const MAX_CREWS = 40;
+// A crew's settings blob is a handful of integers and two dates. 64 KB is the
+// size an authenticated member may save; 4 KB is all an anonymous caller needs
+// to create one, and it is the difference between a junk crew costing bytes and
+// costing 64 KB.
+const MAX_NEW_SETTINGS = 4 * 1024;
 const STAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 class Denied extends Error {}
@@ -65,6 +80,13 @@ async function crewFor(db, a) {
   if (!c) throw new Denied("invalid crew code");
   return c;
 }
+// The ceiling for the two uncredentialled calls. One COUNT on an eleven-row
+// table, so it costs nothing, and it refuses before anything is written.
+async function crewRoomOrDeny(db) {
+  const { n } = await db.prepare("SELECT COUNT(*) AS n FROM crews").first();
+  if (n >= MAX_CREWS) throw new Denied("this server is not taking new crews right now");
+}
+
 async function profileInCrew(db, a) {
   const ok = await db.prepare(
     `SELECT p.id FROM profiles p JOIN crews c ON c.id = p.crew_id
@@ -85,7 +107,9 @@ const PROCEDURES = {
   // A collision is ~1 in 1.1e12; the retry means even then the answer is a
   // different NEW crew, never somebody else's.
   async create_crew(db, a) {
+    await crewRoomOrDeny(db);
     const s = settings(a);
+    if (s.length > MAX_NEW_SETTINGS) throw new Denied("settings too large for a new crew");
     for (let attempt = 0; attempt < 5; attempt++) {
       const crew = { id: crypto.randomUUID(), name: "The Climb", crew_code: newCode(), settings: s, created_at: now() };
       try {
@@ -111,6 +135,7 @@ const PROCEDURES = {
   // start after 10:45pm), so replaying the sets through add_set would stamp
   // every one "now" and hand out the wrong marks.
   async import_crew(db, a) {
+    await crewRoomOrDeny(db);
     const c = a.p_crew;
     if (!c || typeof c !== "object") throw new Denied("invalid p_crew");
     const crewId = uuid(c, "id");

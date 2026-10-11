@@ -458,6 +458,19 @@
          screen they read it on. The editable field lives in Settings behind
          the admin gate. Rendered as text, never an input, so there is nothing
          to type into by accident. -->
+    <!-- Writing is one tap from the crew screen; the bell is the read side.
+         The composer lives in the board panel, so this opens that panel with
+         the input focused rather than keeping a second input in sync with it.
+         A tappable line, not an open box: an always-open empty field on a
+         screen where most of the crew has not started reads as a standing
+         monument to silence, and a blank field with no prompt is intimidating
+         rather than inviting. -->
+    <button id="board-prompt" class="board-prompt hidden" type="button">
+      <span class="bp-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 5.5h16v11H9l-5 4v-4H4z"/></svg>
+      </span>
+      <span class="bp-text">Say something to the crew</span>
+    </button>
     <p id="crew-name-plate" class="crew-name-plate hidden"></p>
     <div id="crew-cards"></div>
     <!-- THE BOARD used to sit here, between the cards and the invite. It now
