@@ -13,7 +13,7 @@
      accent #0F7A6D looked like composited at 50% over this theme's --paper, so
      the disc reads as before while the figure/orbit on top go full brightness. */
   --ul-disc:#85B7AB;
-  --accent:#0F7A6D; --pine:#0B3B34; --volt:#C7F464;
+  --accent:#0F7A6D; --bell-alert:#0B3B34; --pine:#0B3B34; --volt:#C7F464;
   /* launch peak: ink in light, PAPER in dark — the asset carries no colour of
      its own (it is a density mask), so inverting the wash is a colour swap
      rather than a second image. Owner call 2026-08-08: "in dark mode the
@@ -42,7 +42,7 @@
   --tabbar-bg:rgba(255,252,245,.28);
 }
 @media (prefers-color-scheme: dark){
-  :root{
+  :root{ --bell-alert:#C7F464;
     /* --muted checked 2026-07-23: #9FB3AC is 7.8:1 on --paper / 5.6:1 on
        --card here — already passes WCAG AA, no change needed */
     --paper:#081F1B; --card:#0B3B34; --card-rgb:11,59,52; --ink:#F5F0E3; --muted:#9FB3AC;
@@ -668,15 +668,41 @@ input, textarea{-webkit-user-select:text; user-select:text}
 .crew-bell:active{transform:scale(.92)}
 .crew-bell svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;
   stroke-linecap:round;stroke-linejoin:round}
-/* Accent teal, not volt: DESIGN.md rations volt to motion and reward moments,
-   and an unread count is neither. The paper-coloured ring punches it off the
-   bell's own hairline so the two circles never read as one smudge. */
-.crew-bell-count{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;
-  border-radius:999px;background:var(--accent);color:var(--on-accent);
-  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10px;font-weight:700;line-height:1;
-  display:inline-flex;align-items:center;justify-content:center;
-  box-shadow:0 0 0 2px var(--paper);pointer-events:none}
-.crew-bell.has-unread{border-color:var(--accent)}
+/* VOLT when there is something to read, and only then.
+   Owner: the bell should be bright, and contrast with the person's avatar
+   colour. Volt is the only bright colour here DOCUMENTED to do that —
+   DESIGN.md keeps the six people hues "visually distinct from
+   --rest/--excused/--missed and from volt", so it cannot collide with anyone's
+   disc whatever they chose. Teal could, and did: a teal avatar sat beside a
+   teal badge at 1.00:1.
+   The rationing rule still holds. Volt is spent ONLY while something is unread
+   — it arrives with the news and goes when the news is read, which is a moment,
+   not permanent chrome.
+   THE PINE RING IS NOT DECORATION. Volt measures 9.8:1 on the dark card but
+   1.15:1 on light paper — luminous enough to look bright there, nowhere near
+   enough to have an edge, so without a ring the badge dissolves into the cream.
+   The ring draws the shape and the fill supplies the brightness, which is what
+   makes one rule work in both themes. Pine on volt for the text is the PB
+   badge's own pairing, 9.8:1. */
+.crew-bell-count{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;
+  border-radius:999px;background:var(--volt);color:var(--pine);border:1.5px solid var(--pine);
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10px;font-weight:800;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;pointer-events:none}
+/* The bell itself takes whichever of the two actually reads on its own ground:
+   volt would vanish on cream, pine would vanish on the dark card. */
+.crew-bell.has-unread{border-color:var(--bell-alert);color:var(--bell-alert);
+  box-shadow:0 0 0 1px var(--bell-alert)}
+.crew-bell.has-unread svg{stroke-width:2.1}
+@media (prefers-reduced-motion: no-preference){
+  .crew-bell.has-unread svg{animation:bellNudge 2.6s var(--ease-out) infinite}
+}
+/* A nudge, not a jangle: it tips a few times then waits, so a bell left unread
+   all day stays noticeable without becoming something to escape. */
+@keyframes bellNudge{
+  0%,58%,100%{transform:rotate(0)}
+  62%{transform:rotate(11deg)}66%{transform:rotate(-9deg)}
+  70%{transform:rotate(6deg)}74%{transform:rotate(-4deg)}78%{transform:rotate(0)}
+}
 
 /* ---- the board popup (the announcement) ----
    Borrows .unlock-card whole — it IS the unlock panel's sibling, and a second

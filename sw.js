@@ -1,6 +1,6 @@
 // Rope & Rung service worker — network-first with cache fallback.
 // Fresh when online, fully functional offline, instant shell loads.
-const CACHE = "pushpact-v28";  // v28: the board announces itself once, then lives under a bell
+const CACHE = "pushpact-v29";  // v29: the bell goes bright when there is something to read
 const SHELL = [
   "./", "index.html", "style.css", "app.js", "logic.js", "data.js",
   "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
