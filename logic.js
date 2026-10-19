@@ -1282,3 +1282,36 @@ export function unseenUnlocks(unlocks, since = 0, now = Date.now()) {
     .filter((u) => u.at > mark && u.at <= now && ACHIEVEMENT_BY_KEY[u.key])
     .sort((a, b) => cmp(a.at, b.at) || cmp(a.key, b.key));
 }
+
+// The crew card leads with TODAY, and the 7-day strip beneath it encodes only
+// the day STATE — so a day somebody banked 97 against a target of 117 drew the
+// exact same mark as a day they did nothing at all. Every bit of effort short
+// of the target was invisible on every phone except the phone that did it,
+// which is how a crew of twelve looked idle while four of them were working.
+//
+// This reports the best single day in the strip's own window, EXCLUDING today:
+// today is already the headline number on the card, and repeating it there
+// would be noise rather than news.
+//
+// It reports the NET day, via dayTally — the same function the headline and
+// every other count in the app already use. `reps` is signed because winding a
+// set back is a real feature, and the all-time volume badges deliberately sum
+// positives only (backlog HAZARD 1) so a wind-back cannot un-fire them. That
+// reasoning does NOT carry here, and following it would be a lie: the member
+// who fat-fingered 217 and corrected it to 17 two minutes later would have
+// this card telling the whole crew they did 217. What a day was worth is what
+// the ledger says it was worth, which is what their own phone showed them.
+export function bestRecentDay({ sets = [], profileId, today, days = 7 }) {
+  const id = String(profileId ?? "");
+  if (!id || !today || !(days > 1)) return null;
+  let best = null;
+  // Walk BACKWARDS from yesterday. Combined with the strict `>` below, that
+  // makes ties resolve to the most recent day — of two equal efforts, the one
+  // they are likelier to remember doing.
+  for (let i = 1; i < days; i++) {
+    const day = addDays(today, -i);
+    const n = dayTally(sets, id, day);
+    if (n > 0 && (best === null || n > best.tally)) best = { day, tally: n };
+  }
+  return best;
+}

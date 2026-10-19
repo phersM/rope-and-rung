@@ -6,7 +6,7 @@ import {
   weeklyEagle, achievementUnlocks, currentAward, decideAvatar, wardrobe, unseenUnlocks,
   ACHIEVEMENTS, ACHIEVEMENT_BY_KEY, decideCelebrations, decideDataReset,
   circuitFor, quietDays, isQuiet, rankCrew,
-  unseenMessages, recentMessages, unreadCount,
+  unseenMessages, recentMessages, unreadCount, bestRecentDay,
 } from "./logic.js";
 import { makeAdapter, CODE_LENGTH, looksLikeCode, MAX_MESSAGE, fmtAgo } from "./data.js";
 
@@ -207,6 +207,11 @@ async function refetch() {
   if (!state.crew) return;
   if (inFlight) { queuedAgain = true; return inFlight; }
   inFlight = (async () => {
+    // Resolves to whether the LAST pass actually landed. Background callers
+    // ignore it and keep the old silent-retry behaviour; the manual refresh
+    // button needs it, because a refresh that quietly failed must not be
+    // allowed to look exactly like one that worked.
+    let ok = false;
     do {
       queuedAgain = false;
       try {
@@ -220,11 +225,14 @@ async function refetch() {
         // row — shows up immediately instead of only after a full reload.
         state.me = state.profiles.find((p) => p.id === state.me.id) ?? state.me;
         renderAll();
+        ok = true;
       } catch (e) {
         console.warn("refetch failed", e); // background refresh failure shouldn't crash the app — next trigger retries
+        ok = false;
       }
     } while (queuedAgain);
     inFlight = null;
+    return ok;
   })();
   return inFlight;
 }
@@ -1644,6 +1652,13 @@ $("excuse-delete").addEventListener("click", async () => {
 // 2026-10-09: a member who has shown no sign of life for quiet_after_days
 // collapses to a slim row instead (see the comment at the top of the map, and
 // isQuiet() in logic.js). The full card above is what everyone else still gets.
+// "Friday". Only ever used inside a 6-day window, where a bare weekday is
+// unambiguous and reads better than a date — "97 on Friday" is a thing you can
+// picture; "97 on 16/10" is a record. en-AU to match every other date in the app.
+function dayName(day) {
+  return parseDay(day).toLocaleDateString("en-AU", { weekday: "long" });
+}
+
 function renderCrew() {
   // The crew's name, read-only. Hidden entirely in solo mode, where there is
   // no shared crew for a name to belong to. textContent, never innerHTML —
@@ -1710,6 +1725,11 @@ function renderCrew() {
     const total = allTimeTotal(state.sets, p.id);
     const stk = streak({ sets: state.sets, statuses: state.statuses, profileId: p.id, today: today(), settings: state.settings });
     const pb = personalBest(state.sets, p.id);
+    // The card leads with today and the strip under it says only met/missed, so
+    // a day short of the target reads as a day of nothing. This is the one line
+    // that says otherwise. Omitted entirely when there is nothing to say —
+    // a permanent "best: 0" on eight cards would be the opposite of the point.
+    const best = bestRecentDay({ sets: state.sets, profileId: p.id, today: today() });
     const ex = state.statuses.find((s) => s.profile_id === p.id && s.kind === "excuse" &&
       (s.day === today() || s.day === addDays(today(), -1)));
     return `
@@ -1726,6 +1746,7 @@ function renderCrew() {
           </div>
         </div>
         <div class="strip">${strip}</div>
+        ${best ? `<div class="cc-best">best of the last 7 days · <b>${best.tally}</b> on ${dayName(best.day)}</div>` : ""}
         ${ex?.excuse_text ? `<div class="cc-postit"><div class="postit${postitAgeClass(ex.day)}"><small>${ex.day === today() ? "today" : "yesterday"}</small>${esc(ex.excuse_text)}</div></div>` : ""}
       </div>`;
   }).join("");
@@ -1762,6 +1783,8 @@ function renderBoard() {
   // way IN to the composer, so it lives and dies with the board itself —
   // and it needs a profile as well as a crew, since it posts as you.
   $("board-prompt").classList.toggle("hidden", !shared || !state.me);
+  // Same gate: nothing to pull in solo mode, where the "server" is this phone.
+  $("crew-refresh").classList.toggle("hidden", !shared);
   if (!shared || !state.me) {
     // A panel left open while the mode changes under it would be a composer
     // posting into a board the app no longer offers.
@@ -2015,6 +2038,40 @@ function closeBoardPanel() {
   document.body.style.overflow = "";
 }
 $("crew-bell").addEventListener("click", openBoardPanel);
+
+// MANUAL PULL. refetch() already coalesces overlapping callers, so racing the
+// 15s poll is safe — but the button still guards itself, because a double tap
+// would otherwise end the spin on the first reply while the second is in the
+// air.
+//
+// The minimum spin is not decoration. A local fetch can land in 30ms, and a
+// spinner that appears and vanishes inside one frame reads as a dead button —
+// the user taps again, and now they distrust the thing that was working. The
+// floor makes a success legible as a success.
+const REFRESH_MIN_SPIN_MS = 600;
+$("crew-refresh").addEventListener("click", async () => {
+  const b = $("crew-refresh");
+  if (b.classList.contains("is-busy")) return;
+  b.classList.remove("is-fail");
+  b.classList.add("is-busy");
+  const started = Date.now();
+  let ok = false;
+  try {
+    ok = await refetch();
+  } finally {
+    const held = Date.now() - started;
+    if (held < REFRESH_MIN_SPIN_MS) await new Promise((r) => setTimeout(r, REFRESH_MIN_SPIN_MS - held));
+    b.classList.remove("is-busy");
+  }
+  // Say so when it did not work. The label is the only channel a screen reader
+  // has here, so the colour alone is not enough.
+  b.classList.toggle("is-fail", !ok);
+  b.setAttribute("aria-label", ok ? "Check for new pushups" : "Could not reach the crew — tap to try again");
+  if (!ok) setTimeout(() => {
+    b.classList.remove("is-fail");
+    b.setAttribute("aria-label", "Check for new pushups");
+  }, 4000);
+});
 // Writing is one tap from the crew screen. Deliberately the SAME panel the bell
 // opens, not a second composer: two inputs for one board is two things to keep
 // in sync, and the sender needs to watch the note land anyway. openBoardPanel()

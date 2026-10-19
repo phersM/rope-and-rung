@@ -457,6 +457,18 @@
         <span class="cb-label">Notes</span>
         <span id="crew-bell-count" class="crew-bell-count hidden"></span>
       </button>
+      <!-- PULL NOW. The app already refetches on a 15s poll and on focus, so
+           this button buys no data the app would not have got anyway — what it
+           buys is knowing. "Is it broken or has nobody done any?" is not a
+           question a silent background poll can answer, and it is the question
+           that gets asked. Reports honestly: it spins while fetching and goes
+           red if the fetch actually failed, because a refresh that quietly
+           failed must never look like one that worked.
+           Hidden in solo mode with the rest of the crew chrome — there is no
+           server to pull from. -->
+      <button id="crew-refresh" class="crew-refresh hidden" type="button" aria-label="Check for new pushups">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg>
+      </button>
     </div>
     <!-- The crew's name, read-only for everyone here by owner ruling: renaming
          the crew is an admin job, not something any member can do from the

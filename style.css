@@ -2327,3 +2327,35 @@ body.ih-open .screen{padding-bottom:calc(224px + env(safe-area-inset-bottom))}
 .bp-icon{display:inline-flex;flex:none}
 .bp-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;
   stroke-linecap:round;stroke-linejoin:round}
+
+/* "best of the last 7 days · 97 on Friday" — the one line on a crew card that
+   can report effort short of the target. The strip above it encodes met/missed
+   and nothing else, so without this a 97 against a target of 117 draws exactly
+   the mark a day of nothing draws. Omitted by renderCrew() when there is
+   nothing to report, so it never sits on a card saying zero.
+   Sized and coloured UNDER .sub deliberately: it is the quietest line on the
+   card, because it is good news about a day that was still a miss. */
+.cc-best{margin-top:9px;font-size:12px;color:var(--muted);line-height:1.3}
+.cc-best b{font-weight:700;color:var(--ink)}
+
+/* PULL NOW. Same disc species as .form-close — 34px rather than the bell's 38
+   so the pair reads as "the control, and its smaller helper" instead of two
+   equal buttons competing on one row. */
+.crew-refresh{flex:none;width:34px;height:34px;border-radius:50%;
+  border:1.5px solid var(--hair);background:rgba(var(--card-rgb),.78);color:var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .15s var(--ease-out),border-color .2s,color .2s}
+.crew-refresh svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+.crew-refresh:active{transform:scale(.92)}
+.crew-refresh.is-busy{cursor:default}
+/* The spin always runs, reduced-motion included. It is not decoration here —
+   it is the only signal that the tap did anything, and removing it would leave
+   a reduced-motion user tapping a button that never visibly responds. It is a
+   steady rotation, not a bounce or a flash, which is the kind of motion the
+   preference is about. */
+.crew-refresh.is-busy svg{animation:refreshSpin .9s linear infinite}
+@keyframes refreshSpin{to{transform:rotate(360deg)}}
+/* Failure has to look like failure. --missed is the app's own "this did not
+   happen" colour, so the button borrows the vocabulary already on the screen. */
+.crew-refresh.is-fail{border-color:var(--missed);color:var(--missed)}
